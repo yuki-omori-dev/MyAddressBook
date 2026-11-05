@@ -1,0 +1,30 @@
+<resources>
+    <string name="app_name">MyAddressBook</string>
+
+    <!-- 見出し類 -->
+    <string name="section_basic_info">基本情報</string>
+    <string name="section_contact_info">連絡先情報</string>
+    <string name="section_other">その他</string>
+
+    <!-- ヒント類 -->
+    <string name="hint_last_name">姓</string>
+    <string name="hint_first_name">名</string>
+    <string name="hint_last_name_kana">みょうじ</string>
+    <string name="hint_first_name_kana">なまえ</string>
+    <string name="hint_zip_code">郵便番号</string>
+    <string name="hint_address">住所</string>
+    <string name="hint_building_room">建物名・部屋番号など</string>
+    <string name="hint_phone">電話番号</string>
+    <string name="hint_email">メールアドレス</string>
+    <string name="hint_memo">メモや備考</string>
+
+    <!-- ボタン・ダイアログ類 -->
+    <string name="btn_save">保存する</string>
+    <string name="dialog_title_confirm">確認</string>
+    <string name="dialog_msg_discard">入力中の内容は保存されません。戻ってもよろしいですか？</string>
+    <string name="dialog_btn_back">戻る</string>
+    <string name="dialog_btn_cancel">キャンセル</string>
+
+    <!-- 音声読み上げ類 -->
+    <string name="desc_add">名前や住所を登録します</string>
+</resources>

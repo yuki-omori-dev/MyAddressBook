@@ -5,6 +5,7 @@ import static com.yukiomori.myaddressbook.R.*;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
@@ -54,7 +55,7 @@ public class AddAddressActivity extends AppCompatActivity {
         etMemo = findViewById(id.edit_memo);
     }
 
-    private saveAddressData{
+    private void saveAddressData(){
         String lastName=etLastName.getText().toString().trim();
         String firstName=etFirstName.getText().toString().trim();
         String lastNameKana=etLastNameKana.getText().toString().trim();
@@ -66,7 +67,22 @@ public class AddAddressActivity extends AppCompatActivity {
         String email=etEmail.getText().toString().trim();
         String memo=etMemo.getText().toString().trim();
 
-        //入力チェック(バリデーション)
-        //20261105まで。続きを書くこと
+        //入力チェック(バリデーション)。性か名が入力されていれば登録できることにした
+        if(lastName.isEmpty()&&firstName.isEmpty()){
+            Toast.makeText(AddAddressActivity.this, "メッセージ", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        //最低限の情報があるので、セッターで入力情報を登録
+        Contact contact=new Contact();
+        contact.setLastName(lastName);
+        contact.setFirstName(firstName);
+        contact.setLastNameKana(lastNameKana);
+        contact.setFirstNameKana(firstNameKana);
+        contact.setZipCode(zipCode);
+        contact.setAddress(address);
+        contact.setBuildingRoom(buildingRoom);
+        contact.setPhone(phone);
+        contact.setEmail(email);
+        contact.setMemo(memo);
     }
 }

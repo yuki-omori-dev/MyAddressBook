@@ -1,8 +1,13 @@
 package com.yukiomori.myaddressbook;
 
+import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     //データベースのファイルの名前。スマホ内部にこの名前で保存される
@@ -60,7 +65,73 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
-    //Contactに入っているデータをデータベースに保存するメソッドが必要
+    //新しい連絡先をデータベースに保存するメソッド。contactに保存したデータをデータベースへ移すイメージ
+    public long insertContact(Contact contact){
+        //ContentValuesクラスという、データを挿入する時に列名(キー)と値(バリュー)をペアで格納するクラスを使う
+        //複雑なSQLを組み立てることなく安全にデータを登録できる
+        ContentValues contentValues=new ContentValues();
+        //put()メソッドでキーとバリューを紐づけている
+        contentValues.put(COLUMN_UUID, contact.getUuid());
+        contentValues.put(COLUMN_LAST_NAME, contact.getLastName());
+        contentValues.put(COLUMN_FIRST_NAME, contact.getFirstName());
+        contentValues.put(COLUMN_LAST_NAME_KANA, contact.getLastNameKana());
+        contentValues.put(COLUMN_FIRST_NAME_KANA, contact.getFirstNameKana());
+        contentValues.put(COLUMN_ZIP_CODE, contact.getZipCode());
+        contentValues.put(COLUMN_ADDRESS, contact.getAddress());
+        contentValues.put(COLUMN_BUILDING_ROOM, contact.getBuildingRoom());
+        contentValues.put(COLUMN_PHONE, contact.getPhone());
+        contentValues.put(COLUMN_EMAIL, contact.getEmail());
+        contentValues.put(COLUMN_MEMO, contact.getMemo());
+        //書き込みが可能なデータベースを取得
+        SQLiteDatabase db=this.getWritableDatabase();
+        //データベースに挿入
+        long result=db.insert(TABLE_NAME,null,contentValues);
+        //データベースを閉じる
+        db.close();
+        return result;
+    }
+
+    //データベースから全データを取り出してListにする
+    public List<Contact> getAllContacts(){
+        List<Contact> contactList=new ArrayList<>();
+        //読み出し専用のデータベースを取得
+        SQLiteDatabase db = this.getReadableDatabase();
+        //SELECT * FROM contactsのSQL文
+        //CursorはSQLiteにおいては表のどの行をいま見ているかを指し示す役割
+        //取得時は最初の行の一つ手前を指している状態なので注意
+        Cursor cursor=db.rawQuery("SELECT * FROM "+ TABLE_NAME,null);
+        // 結果を1行ずつ取り出す
+        if (cursor.moveToFirst()) {
+            do {
+                // 各カラムの値を取得（文字列がnullなら空文字にする)
+                //cursor.getColumnIndexOrThrow(カラム名)により、そのカラムが左から何番目にあるか(列番号)を調べる
+                String uuid = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_UUID));
+                String lastName = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_LAST_NAME));
+                String firstName = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_FIRST_NAME));
+                String lastNameKana = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_LAST_NAME_KANA));
+                String firstNameKana = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_FIRST_NAME_KANA));
+                String zipCode = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ZIP_CODE));
+                String address = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ADDRESS));
+                String buildingRoom = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_BUILDING_ROOM));
+                String phone = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_PHONE));
+                String email = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_EMAIL));
+                String memo = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MEMO));
+
+                // 全項目コンストラクタを使って Contact オブジェクトを作成
+                Contact contact = new Contact(uuid, lastName, firstName, lastNameKana, firstNameKana,
+                        zipCode, address, buildingRoom, phone, email, memo);
+
+                // リストに追加
+                contactList.add(contact);
+            } while (cursor.moveToNext());
+        }
+
+        // カーソルとDBを閉じる
+        cursor.close();
+        db.close();
+
+        return contactList;
+    }
 
 
 }

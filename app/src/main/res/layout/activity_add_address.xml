@@ -7,10 +7,12 @@
     android:layout_height="match_parent"
     android:background="#F5F5F5"
     android:paddingBottom="16dp"
-    android:clipToPadding="false">
+    android:clipToPadding="false"
+    android:fillViewport="true">  <!--  -->
 
     <!-- ScrollViewの直下には1つしか部品を置けないため、縦並びのLinearLayoutを置く -->
     <LinearLayout
+        android:id="@+id/layout_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"

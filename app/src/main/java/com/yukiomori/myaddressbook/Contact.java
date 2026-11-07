@@ -8,6 +8,7 @@ public class Contact {
     private String zipCode,address,buildingRoom,phone,email,memo;
 
     //引数なしのコンストラクタ(後からSetterで値を入れる)。セッターとセットで扱う
+    //空文字を入れたフィールドを使うことでnullが発生しなくなる
     public Contact(){
         this.uuid=UUID.randomUUID().toString();
         this.lastName="";

@@ -133,5 +133,63 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return contactList;
     }
 
+    //指定したUUIDのContactを返す
+    public Contact getContactByUuid(String uuid){
+        Contact contact=null;
+        SQLiteDatabase db=this.getReadableDatabase();
+        //プレースホルダーを使って検索
+        //ユーザーの入力操作などがなくとも、全てプレースホルダーを使うことをルールにするとエラーに強くなる
+        Cursor cursor=db.rawQuery("SELECT * FROM "+TABLE_NAME+" WHERE "+COLUMN_UUID+" = ?",new String[]{uuid});
 
+        if (cursor.moveToFirst()) {
+            //探した1件からデータを拾って
+            String lastName = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_LAST_NAME));
+            String firstName = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_FIRST_NAME));
+            String lastNameKana = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_LAST_NAME_KANA));
+            String firstNameKana = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_FIRST_NAME_KANA));
+            String zipCode = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ZIP_CODE));
+            String address = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ADDRESS));
+            String buildingRoom = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_BUILDING_ROOM));
+            String phone = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_PHONE));
+            String email = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_EMAIL));
+            String memo = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MEMO));
+            //全項目コンストラクタを使ってContactオブジェクトを作成
+            contact = new Contact(uuid, lastName, firstName, lastNameKana, firstNameKana,
+                    zipCode, address, buildingRoom, phone, email, memo);
+        }
+        //かならずカーソルやDBは使ったら閉じる
+        cursor.close();
+        db.close();
+        return contact;
+    }
+
+    //編集後の情報をDBに上書き保存する
+    public int updateContact(Contact contact){
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(COLUMN_LAST_NAME, contact.getLastName());
+        contentValues.put(COLUMN_FIRST_NAME, contact.getFirstName());
+        contentValues.put(COLUMN_LAST_NAME_KANA, contact.getLastNameKana());
+        contentValues.put(COLUMN_FIRST_NAME_KANA, contact.getFirstNameKana());
+        contentValues.put(COLUMN_ZIP_CODE, contact.getZipCode());
+        contentValues.put(COLUMN_ADDRESS, contact.getAddress());
+        contentValues.put(COLUMN_BUILDING_ROOM, contact.getBuildingRoom());
+        contentValues.put(COLUMN_PHONE, contact.getPhone());
+        contentValues.put(COLUMN_EMAIL, contact.getEmail());
+        contentValues.put(COLUMN_MEMO, contact.getMemo());
+
+        // WHERE uuid = ? の条件に一致するレコードをupdateで更新する
+        int rowsAffected = db.update(
+                TABLE_NAME,
+                contentValues,
+                COLUMN_UUID + " = ?",
+                new String[]{contact.getUuid()}
+        );
+
+        db.close();
+        // 更新された行数(正常なら1)を返す
+        return rowsAffected;
+
+    }
 }

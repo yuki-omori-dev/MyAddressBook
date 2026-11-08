@@ -106,8 +106,9 @@ public class AddAddressActivity extends AppCompatActivity {
         String memo=etMemo.getText().toString().trim();
 
         //入力チェック(バリデーション)。性か名が入力されていれば登録できることにした
+        //将来的にxmlの入力欄をTextInputLayoutで囲い、トーストではなく赤いメッセージを出力するようにしたい
         if(lastName.isEmpty()&&firstName.isEmpty()){
-            Toast.makeText(AddAddressActivity.this, "メッセージ", Toast.LENGTH_SHORT).show();
+            Toast.makeText(AddAddressActivity.this, "姓か名を入力してください", Toast.LENGTH_SHORT).show();
             return;
         }
         //最低限の情報があるので、セッターで入力情報を登録

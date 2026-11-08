@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- キーボード表示時や画面が小さいスマホでもスクロールできるように全体をScrollViewにする -->
+<!--キーボード表示時や画面が小さいスマホでもスクロールできるように全体をScrollViewにする-->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/scroll_view"
@@ -10,7 +10,7 @@
     android:clipToPadding="false"
     android:fillViewport="true">  <!--  -->
 
-    <!-- ScrollViewの直下には1つしか部品を置けないため、縦並びのLinearLayoutを置く -->
+    <!--ScrollViewの直下には1つしか部品を置けないため、縦並びのLinearLayoutを置く-->
     <LinearLayout
         android:id="@+id/layout_container"
         android:layout_width="match_parent"
@@ -18,7 +18,7 @@
         android:orientation="vertical"
         android:padding="8dp">
 
-        <!-- カード1：基本情報 -->
+        <!--カード1：基本情報-->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -47,7 +47,7 @@
                     android:orientation="horizontal"
                     android:weightSum="2">
 
-                    <!-- 姓の入力欄 (比率1) -->
+                    <!--姓の入力欄(比率1)-->
                     <EditText
                         android:id="@+id/edit_last_name"
                         android:layout_width="0dp"
@@ -58,7 +58,7 @@
                         android:inputType="textPersonName"
                         android:autofillHints="personName"/>
 
-                    <!-- 名の入力欄 (比率1) -->
+                    <!--名の入力欄(比率1)-->
                     <EditText
                         android:id="@+id/edit_first_name"
                         android:layout_width="0dp"
@@ -100,7 +100,7 @@
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- カード2：連絡先情報 -->
+        <!--カード2：連絡先情報-->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -164,7 +164,7 @@
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- カード3：その他 -->
+        <!--カード3：その他-->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -199,7 +199,7 @@
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- 保存ボタン（横幅いっぱいに広げ、上下マージンでバランスを取る） -->
+        <!--保存ボタン(横幅いっぱいに広げ、上下マージンでバランスを取る)-->
         <Button
             android:id="@+id/btn_save"
             android:layout_width="match_parent"

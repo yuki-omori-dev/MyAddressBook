@@ -21,6 +21,7 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
     private ListView listView;
     private DatabaseHelper dbHelper;
+    private List<Contact> contactList;  //保持したほうが扱いやすいのでメンバにしておく
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,10 +37,21 @@ public class MainActivity extends AppCompatActivity {
         FloatingActionButton btnAdd=findViewById(R.id.btn_Add);
         //ほかの初期化の処理
         listView=findViewById(R.id.list_view);
-        dbHelper = new DatabaseHelper(this);
+        dbHelper=new DatabaseHelper(this);
         //タップされたときAddAddressActivityにジャンプ。ということをラムダ式で記述
         btnAdd.setOnClickListener(v->{
-            Intent intent=new Intent(MainActivity.this, AddAddressActivity.class);
+            Intent intent=new Intent(MainActivity.this,AddAddressActivity.class);
+            startActivity(intent);
+        });
+        //一覧の項目がタップされたときの処理
+        listView.setOnItemClickListener((parent, view, position, id)->{
+            //タップされた行(position)のContactオブジェクトを取得
+            Contact selectedContact=contactList.get(position);
+            //ContactDetailActivityへのIntentを作成
+            Intent intent=new Intent(MainActivity.this,ContactDetailActivity.class);
+            //選択された連絡先のUUIDをIntentに持たせる(キー名:"EXTRA_UUID")
+            intent.putExtra("EXTRA_UUID",selectedContact.getUuid());
+            //画面遷移をする
             startActivity(intent);
         });
 
@@ -58,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void loadContactList(){
         //DBから全データを取得
-        List<Contact> contactList=dbHelper.getAllContacts();
+        contactList=dbHelper.getAllContacts();  //取得したリストをメンバに保持
         //ListViewに表示するためのString型のリストを作る
         List<String> displayNames=new ArrayList<>();
         for(Contact contact:contactList){

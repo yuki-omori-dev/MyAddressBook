@@ -20,6 +20,8 @@
 
     <!-- ボタン・ダイアログ類 -->
     <string name="btn_save">保存する</string>
+    <string name="btn_back">戻る</string>
+    <string name="btn_edit">編集する</string>
     <string name="dialog_title_confirm">確認</string>
     <string name="dialog_msg_discard">入力中の内容は保存されません。戻ってもよろしいですか？</string>
     <string name="dialog_btn_back">戻る</string>

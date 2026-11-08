@@ -1,5 +1,6 @@
 package com.yukiomori.myaddressbook;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
@@ -96,16 +97,25 @@ public class ContactDetailActivity extends AppCompatActivity {
     }
     // 各EditTextの入力の可/不可(enabled)を一括切り替えするメソッド
     private void setFieldsEnabled(boolean enabled) {
-        etLastName.setEnabled(enabled);
-        etFirstName.setEnabled(enabled);
-        etLastNameKana.setEnabled(enabled);
-        etFirstNameKana.setEnabled(enabled);
-        etZipCode.setEnabled(enabled);
-        etAddress.setEnabled(enabled);
-        etBuildingRoom.setEnabled(enabled);
-        etPhone.setEnabled(enabled);
-        etEmail.setEnabled(enabled);
-        etMemo.setEnabled(enabled);
+        setEditTextEditable(etLastName, enabled);
+        setEditTextEditable(etFirstName, enabled);
+        setEditTextEditable(etLastNameKana, enabled);
+        setEditTextEditable(etFirstNameKana, enabled);
+        setEditTextEditable(etZipCode, enabled);
+        setEditTextEditable(etAddress, enabled);
+        setEditTextEditable(etBuildingRoom, enabled);
+        setEditTextEditable(etPhone, enabled);
+        setEditTextEditable(etEmail, enabled);
+        setEditTextEditable(etMemo, enabled);
+    }
+    //フォーカスを無効にする仕組み
+    private void setEditTextEditable(EditText editText, boolean editable) {
+        editText.setFocusable(editable);            //キーボードフォーカスの有効/無効
+        editText.setFocusableInTouchMode(editable); //タップ時のフォーカスの有効/無効
+        editText.setCursorVisible(editable);        //点滅カーソルの表示/非表示
+
+        //閲覧モード時の文字の色を指定できるように。必要ないなら消してもよい
+        editText.setTextColor(Color.BLACK);
     }
 
     // 変更されたデータをDBに上書き保存する

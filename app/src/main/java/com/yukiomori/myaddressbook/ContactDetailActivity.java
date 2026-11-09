@@ -2,10 +2,14 @@ package com.yukiomori.myaddressbook;
 
 import android.graphics.Color;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -27,6 +31,15 @@ public class ContactDetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         WindowCompat.enableEdgeToEdge(getWindow());
         setContentView(R.layout.activity_contact_detail);
+        //作成したツールバーをセットアップ
+        androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        //ツールバーがステータスバーと重なっていたので上部の余白を開ける処理
+        ViewCompat.setOnApplyWindowInsetsListener(toolbar, (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(v.getPaddingLeft(), systemBars.top, v.getPaddingRight(), v.getPaddingBottom());
+            return insets;
+        });
         //AddAddressActivityの転用
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.layout_container), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -54,16 +67,43 @@ public class ContactDetailActivity extends AppCompatActivity {
         btnBack.setOnClickListener(v->finish());
         //編集ボタンを押したら保存モードへ移行し、ボタン名を保存ボタンに
         btnEdit.setOnClickListener(v->{
-            if(!isEditMode){
-                isEditMode=true;
-                setFieldsEnabled(true); //isEditModeを引数にすると警告されるのでtrueとした
-                btnEdit.setText("保存する");
-                Toast.makeText(this,"編集モードになりました",Toast.LENGTH_SHORT).show();
-            }else{
-                //データを上書き更新して閲覧モードに戻る処理
-                saveUpdatedContact();
-            }
+            toggleEditMode();
         });
+    }
+    //menu形式で作成したXMLを読み込んで使う
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_contact_detail, menu);
+        return true;
+    }
+    //メニューが押された時の処理
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.action_edit) {
+            toggleEditMode();
+            return true;
+        } else if (id == R.id.action_delete) {
+            //誤操作防止の確認ダイアログを作る
+            new androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("確認")
+            .setMessage("この連絡先を削除してもよろしいですか？")
+                    .setPositiveButton("削除",(dialog,which)->{
+                        int result = dbHelper.deleteContact(currentUuid);
+                        if (result > 0) {
+                            Toast.makeText(this, "削除しました", Toast.LENGTH_SHORT).show();
+                            finish();
+                        } else {
+                            Toast.makeText(this, "削除に失敗しました", Toast.LENGTH_SHORT).show();
+                        }
+                    })
+                            .setNegativeButton("キャンセル",null)
+                                    .show();
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 
     private void initViews() {
@@ -80,6 +120,18 @@ public class ContactDetailActivity extends AppCompatActivity {
 
         btnBack=findViewById(R.id.btn_back);
         btnEdit=findViewById(R.id.btn_edit);
+    }
+    //編集モードに移行する処理をメソッド化した
+    private void toggleEditMode(){
+        if(!isEditMode){
+            isEditMode=true;
+            setFieldsEnabled(true); //isEditModeを引数にすると警告されるのでtrueとした
+            btnEdit.setText("保存する");
+            Toast.makeText(this,"編集モードになりました",Toast.LENGTH_SHORT).show();
+        }else{
+            //データを上書き更新して閲覧モードに戻る処理
+            saveUpdatedContact();
+        }
     }
 
     // 取得したContactデータを各EditTextにセットする
@@ -120,12 +172,25 @@ public class ContactDetailActivity extends AppCompatActivity {
 
     // 変更されたデータをDBに上書き保存する
     private void saveUpdatedContact() {
-        String lastName = etLastName.getText().toString().trim();
-        String firstName = etFirstName.getText().toString().trim();
+        String lastName=etLastName.getText().toString().trim();
+        String firstName=etFirstName.getText().toString().trim();
+        String lastNameKana=etLastNameKana.getText().toString().trim();
+        String firstNameKana=etFirstNameKana.getText().toString().trim();
 
         // 入力チェック(姓か名のどちらかは必須)
         if (lastName.isEmpty() && firstName.isEmpty()) {
-            Toast.makeText(this, "姓か名を入力してください", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "姓か名を入力してください",Toast.LENGTH_SHORT).show();
+            return;
+        }
+        //姓が入力されているのに、姓ふりがなが空ならNG
+        if (!lastName.isEmpty() && lastNameKana.isEmpty()) {
+            Toast.makeText(this, "みょうじ（ふりがな）を入力してください",Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        //名が入力されているのに、名ふりがなが空ならNG
+        if (!firstName.isEmpty() && firstNameKana.isEmpty()) {
+            Toast.makeText(this, "なまえ（ふりがな）を入力してください",Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -134,8 +199,8 @@ public class ContactDetailActivity extends AppCompatActivity {
                 currentUuid,
                 lastName,
                 firstName,
-                etLastNameKana.getText().toString().trim(),
-                etFirstNameKana.getText().toString().trim(),
+                lastNameKana,
+                firstNameKana,
                 etZipCode.getText().toString().trim(),
                 etAddress.getText().toString().trim(),
                 etBuildingRoom.getText().toString().trim(),

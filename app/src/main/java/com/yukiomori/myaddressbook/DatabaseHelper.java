@@ -66,6 +66,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     //新しい連絡先をデータベースに保存するメソッド。contactに保存したデータをデータベースへ移すイメージ
+    //戻り値はRowIdと呼ばれる、DB内部で自発的に発行するID
     public long insertContact(Contact contact){
         //ContentValuesクラスという、データを挿入する時に列名(キー)と値(バリュー)をペアで格納するクラスを使う
         //複雑なSQLを組み立てることなく安全にデータを登録できる
@@ -190,6 +191,17 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.close();
         // 更新された行数(正常なら1)を返す
         return rowsAffected;
+    }
 
+    public int deleteContact(String uuid){
+        SQLiteDatabase db=this.getWritableDatabase();
+        //updateと同様に、今度はdeleteの指示をする
+        int rowsAffected=db.delete(
+                TABLE_NAME,
+                COLUMN_UUID+" = ?",
+                new String[]{uuid}
+        );
+        db.close();
+        return rowsAffected;    //削除された行数
     }
 }

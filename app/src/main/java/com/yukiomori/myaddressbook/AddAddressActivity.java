@@ -3,12 +3,15 @@ package com.yukiomori.myaddressbook;
 import static com.yukiomori.myaddressbook.R.*;
 
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ScrollView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -27,7 +30,15 @@ public class AddAddressActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         WindowCompat.enableEdgeToEdge(getWindow());
         setContentView(layout.activity_add_address);
-
+        //ツールバーのセットアップ
+        androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        //ツールバーがステータスバーと重ならないようにする処理
+        ViewCompat.setOnApplyWindowInsetsListener(toolbar, (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(v.getPaddingLeft(), systemBars.top, v.getPaddingRight(), v.getPaddingBottom());
+            return insets;
+        });
         //キーボードが出現した時に入力欄をキーボードよりも上に持ち上げたように見せた時、座標がズレるのを解決するためxmlに
         // android:id="@+id/layout_container"を追記し、scroll.viewではなく中のlayout_containerに余白を設定する
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.layout_container), (v, insets) -> {
@@ -91,6 +102,27 @@ public class AddAddressActivity extends AppCompatActivity {
         etEmail = findViewById(id.edit_email);
         etMemo = findViewById(id.edit_memo);
     }
+    // メニューを表示する機能
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_contact_detail, menu);
+        return true;
+    }
+    // メニューが押された時の処理
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.action_edit) {
+            //これは使いまわしの仮設定なので、メニューの内容と処理が決まったら書く
+            return true;
+        } else if (id == R.id.action_delete) {
+            //上に同じ
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
 
     //EditViewに入力されたデータをDBに保存し、結果をユーザに報告する
     private void saveDatabase(){
@@ -108,9 +140,21 @@ public class AddAddressActivity extends AppCompatActivity {
         //入力チェック(バリデーション)。性か名が入力されていれば登録できることにした
         //将来的にxmlの入力欄をTextInputLayoutで囲い、トーストではなく赤いメッセージを出力するようにしたい
         if(lastName.isEmpty()&&firstName.isEmpty()){
-            Toast.makeText(AddAddressActivity.this, "姓か名を入力してください", Toast.LENGTH_SHORT).show();
+            Toast.makeText(AddAddressActivity.this, "姓か名を入力してください",Toast.LENGTH_SHORT).show();
             return;
         }
+        //姓が入力されているのに、姓のふりがなが空ならNG
+        if (!lastName.isEmpty() && lastNameKana.isEmpty()) {
+            Toast.makeText(this, "みょうじ(ふりがな)を入力してください",Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        //名が入力されているのに、名のふりがなが空ならNG
+        if (!firstName.isEmpty() && firstNameKana.isEmpty()) {
+            Toast.makeText(this, "なまえ(ふりがな)を入力してください",Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         //最低限の情報があるので、セッターで入力情報を登録
         Contact contact=new Contact();
         contact.setLastName(lastName);

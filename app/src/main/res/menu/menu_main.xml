@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_sort_asc"
+        android:title="昇順に並べ替え"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_sort_desc"
+        android:title="降順に並べ替え"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_sort_default"
+        android:title="登録順に並べ替え"
+        app:showAsAction="never" />
+
+</menu>

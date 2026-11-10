@@ -81,13 +81,43 @@ public class AddAddressActivity extends AppCompatActivity {
         });
         //findViewByIdをまとめたメソッド
         initViews();
+        //戻るボタンイベントの設定。入力途中だったときバック処理に飛ぶ
+        Button btnBack = findViewById(R.id.btn_back);
+        btnBack.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
         //保存ボタンが押された時、データを保存する処理をする
         Button btnSave=findViewById(R.id.btn_save);
         btnSave.setOnClickListener(v->{
             saveDatabase();
         });
         //戻るが押されたときの警告ダイアログ処理
-        //は後で書く
+        //onBackPressed()が非推奨なので、onCreate内でOnBackPressedDispatcherを使ってコールバックを登録
+        getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (hasUnsavedChanges()) {
+                    // 未保存の入力がある場合のみダイアログを表示
+                    new androidx.appcompat.app.AlertDialog.Builder(AddAddressActivity.this)
+                            .setTitle("確認")
+                            .setMessage("入力中の内容があります。どうしますか？")
+                            .setPositiveButton("保存して戻る", (dialog, which) -> {
+                                saveDatabase(); // 保存処理
+                            })
+                            .setNegativeButton("破棄して戻る", (dialog, which) -> {
+                                // 一時的にこのコールバックを無効化して、再度戻る操作をシステムに流す
+                                setEnabled(false);
+                                getOnBackPressedDispatcher().onBackPressed();
+                            })
+                            .setNeutralButton("キャンセル", (dialog, which) -> {
+                                // 何もしない（入力画面に留まる）
+                            })
+                            .show();
+                } else {
+                    // 未保存の入力がなければそのまま戻る
+                    setEnabled(false);
+                    getOnBackPressedDispatcher().onBackPressed();
+                }
+            }
+        });
     }
 
     private void initViews(){
@@ -138,20 +168,44 @@ public class AddAddressActivity extends AppCompatActivity {
         String memo=etMemo.getText().toString().trim();
 
         //入力チェック(バリデーション)。性か名が入力されていれば登録できることにした
+        //チェック項目を増やした
         //将来的にxmlの入力欄をTextInputLayoutで囲い、トーストではなく赤いメッセージを出力するようにしたい
-        if(lastName.isEmpty()&&firstName.isEmpty()){
+        if(!ValidationUtils.hasName(lastName,firstName)){
             Toast.makeText(AddAddressActivity.this, "姓か名を入力してください",Toast.LENGTH_SHORT).show();
             return;
         }
         //姓が入力されているのに、姓のふりがなが空ならNG
-        if (!lastName.isEmpty() && lastNameKana.isEmpty()) {
+        if (!ValidationUtils.hasCorrespondingKana(lastName,lastNameKana)) {
             Toast.makeText(this, "みょうじ(ふりがな)を入力してください",Toast.LENGTH_SHORT).show();
             return;
         }
-
         //名が入力されているのに、名のふりがなが空ならNG
-        if (!firstName.isEmpty() && firstNameKana.isEmpty()) {
+        if (!ValidationUtils.hasCorrespondingKana(firstName,firstNameKana)) {
             Toast.makeText(this, "なまえ(ふりがな)を入力してください",Toast.LENGTH_SHORT).show();
+            return;
+        }
+        //ふりがながひらがなで入力されているかチェック
+        if (!ValidationUtils.isHiraganaOnly(lastNameKana)) {
+            Toast.makeText(this, "みょうじ（ふりがな）は「ひらがな」で入力してください", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (!ValidationUtils.isHiraganaOnly(firstNameKana)) {
+            Toast.makeText(this, "なまえ（ふりがな）は「ひらがな」で入力してください", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        //郵便番号の桁数チェック
+        if (!ValidationUtils.isValidZipCode(zipCode)) {
+            Toast.makeText(this, "郵便番号は7桁（例: 1234567）で入力してください", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        //電話番号の桁数チェック
+        if (!ValidationUtils.isValidPhone(phone)) {
+            Toast.makeText(this, "電話番号は10桁または11桁で入力してください", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        //メールアドレスの形式チェック
+        if (!ValidationUtils.isValidEmail(email)) {
+            Toast.makeText(this, "メールアドレスの形式が正しくありません", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -177,7 +231,26 @@ public class AddAddressActivity extends AppCompatActivity {
         } else {
             Toast.makeText(this,"保存に失敗しました",Toast.LENGTH_SHORT).show();
         }
-
     }
+
+    //入力途中のデータがあるかをチェックするメソッド
+    private boolean hasUnsavedChanges(){
+        String lastName=etLastName.getText().toString().trim();
+        String firstName=etFirstName.getText().toString().trim();
+        String lastNameKana=etLastNameKana.getText().toString().trim();
+        String firstNameKana=etFirstNameKana.getText().toString().trim();
+        String zipCode=etZipCode.getText().toString().trim();
+        String address=etAddress.getText().toString().trim();
+        String buildingRoom=etBuildingRoom.getText().toString().trim();
+        String phone=etPhone.getText().toString().trim();
+        String email=etEmail.getText().toString().trim();
+        String memo=etMemo.getText().toString().trim();
+        //文字が入力されていれば入力途中である判定
+        return !lastName.isEmpty()||!firstName.isEmpty()||!lastNameKana.isEmpty()
+                ||!firstNameKana.isEmpty()||!zipCode.isEmpty()||!address.isEmpty()
+                ||!buildingRoom.isEmpty()||!phone.isEmpty()||!email.isEmpty()||!memo.isEmpty();
+    }
+
+
 
 }

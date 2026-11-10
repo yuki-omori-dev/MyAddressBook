@@ -25,7 +25,14 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
     private ListView listView;
     private DatabaseHelper dbHelper;
-    private List<Contact> contactList;  //保持したほうが扱いやすいのでメンバにしておく
+    //保持したほうが扱いやすいのでメンバにしておく
+    //検索窓が空のときにポートレートランドスケープが切り替わるとエラーを起こすので、初期化しておく
+    //onTextChangedが先に動き出してnull状態のリストを読み込もうとしてヌポイが発生するため
+    private List<Contact> contactList=new ArrayList<>();
+    private String currentSortOrder = null; //SQL命令用の保持用変数
+    //検索窓に入力するたびにオブジェクトを作るのが効率が悪いのでAdapterもメンバを作る
+    private ContactAdapter adapter;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,10 +72,16 @@ public class MainActivity extends AppCompatActivity {
             @Override
             //文字が変更されている最中・直後に反応する
             public void onTextChanged(CharSequence s,int start,int before,int count) {
+                //ポートレートランドスケープ時のエラー対策2
+                //contactListがnullなら何もしない
+                if (contactList == null) {
+                    return;
+                }
                 //入力されたキーワードを取得(前後の空白を消して小文字化)
                 //すべて小文字にすることでのちほど大文字小文字の区別なくヒットさせるようにする
                 String query=s.toString().trim().toLowerCase();
-
+                //検索ワードのカタカナ変換
+                String queryKatakana=hiraganaToKatakana(query);
                 //絞り込み用の新しいリストを作成
                 List<Contact> filteredList=new ArrayList<>();
 
@@ -82,14 +95,20 @@ public class MainActivity extends AppCompatActivity {
                     //部分一致の判定(queryが含まれているか)
                     //queryが空のとき""(空文字)となり、Javaではどんな文字列でも""は必ず含まれているという仕様になっている
                     //つまりすべての連絡先がヒットするので、結果的に初期状態のようにすべてのリストが表示される
-                    if (fullName.contains(query)||fullNameKana.contains(query)||phone.contains(query)){
+                    //カタカナの名前もヒットするように調整
+                    if (fullName.contains(query)||fullName.contains(queryKatakana)
+                            ||fullNameKana.contains(query)||fullNameKana.contains(queryKatakana)
+                            ||phone.contains(query)){
                         filteredList.add(contact);
                     }
                 }
 
-                //絞り込み後のリストをアダプターにセットして表示を更新
-                ContactAdapter adapter=new ContactAdapter(MainActivity.this, filteredList);
-                listView.setAdapter(adapter);
+                //絞り込んだリストで既存のアダプターの中を更新し、再描画を通知
+                if (adapter != null) {
+                    adapter.clear();
+                    adapter.addAll(filteredList);
+                    adapter.notifyDataSetChanged();
+                }
             }
 
             @Override
@@ -133,39 +152,20 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
 
-        // 昇順に並べ替え
         if (id == R.id.action_sort_asc) {
-            if (contactList != null) {
-                contactList.sort((c1, c2) -> {
-                    int result = c1.getLastNameKana().compareTo(c2.getLastNameKana());
-                    if (result == 0) {
-                        result = c1.getFirstNameKana().compareTo(c2.getFirstNameKana());
-                    }
-                    return result;
-                });
-                //画面(ListView)のアダプターを再セットして表示を更新する
-                listView.setAdapter(new ContactAdapter(this, contactList));
-            }
+            //昇順
+            currentSortOrder = "last_name_kana ASC, first_name_kana ASC";
+            loadContactList();
             return true;
-
-            // 降順に並べ替え
         } else if (id == R.id.action_sort_desc) {
-            if (contactList != null) {
-                contactList.sort((c1, c2) -> {
-                    int result = c2.getLastNameKana().compareTo(c1.getLastNameKana());
-                    if (result == 0) {
-                        result = c2.getFirstNameKana().compareTo(c1.getFirstNameKana());
-                    }
-                    return result;
-                });
-                //画面(ListView)のアダプターを再セットして表示を更新する
-                listView.setAdapter(new ContactAdapter(this, contactList));
-            }
+            // 降順
+            currentSortOrder = "last_name_kana DESC, first_name_kana DESC";
+            loadContactList();
             return true;
-
-            //登録順(デフォルト)に戻す
         } else if (id == R.id.action_sort_default) {
-            loadContactList(); // 再読み込みしてデフォルト表示に戻す
+            //デフォルト(登録順)
+            currentSortOrder = null;
+            loadContactList();
             return true;
         }
 
@@ -173,11 +173,30 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadContactList(){
-        //DBから全データを取得
-        contactList=dbHelper.getAllContacts();  //取得したリストをメンバに保持
-        //カスタムアダプターをインスタンス化
-        ContactAdapter adapter=new ContactAdapter(this,contactList);
-        //ListViewにAdapterをセット
-        listView.setAdapter(adapter);
+        contactList = dbHelper.getAllContacts(currentSortOrder);
+
+        //初回のみ生成し、2回目以降は中身を更新して通知
+        if (adapter == null) {
+            adapter = new ContactAdapter(this, contactList);
+            listView.setAdapter(adapter);
+        } else {
+            adapter.clear();
+            adapter.addAll(contactList);
+            adapter.notifyDataSetChanged(); //再描画を通知
+        }
+    }
+
+    //ひらがなをカタカナに変換するメソッド
+    private String hiraganaToKatakana(String str){
+        if(str==null){return "";}
+        StringBuilder sb=new StringBuilder(str);
+        for(int i=0;i<sb.length();i++){
+            char c=sb.charAt(i);
+            //ひらがなの範囲(ぁ:0x3041_ん:0x3093)
+            if(c>='\u3041'&&c<='\u3093'){
+                sb.setCharAt(i,(char)(c+0x60)); //カタカナに変換
+            }
+        }
+        return sb.toString();
     }
 }

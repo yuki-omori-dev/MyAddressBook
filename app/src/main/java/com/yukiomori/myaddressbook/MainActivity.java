@@ -1,18 +1,17 @@
 package com.yukiomori.myaddressbook;
 
 import android.content.Intent;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -21,6 +20,12 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -227,9 +232,9 @@ public class MainActivity extends AppCompatActivity {
             listView.setVisibility(View.GONE);
             //DBに1件も登録されていないときと、検索にヒットしなかったときのメッセージ
             if (contactList.isEmpty()) {
-                tvEmpty.setText("まだ1件も登録されていません");
+                tvEmpty.setText(R.string.empty_no_contacts);
             } else if (isSearching) {
-                tvEmpty.setText("該当する連絡先がありません");
+                tvEmpty.setText(R.string.empty_no_search_results);
             }
         } else {
             tvEmpty.setVisibility(View.GONE);
@@ -253,13 +258,13 @@ public class MainActivity extends AppCompatActivity {
     private void writeCsvToUri(android.net.Uri uri, String csvData) {
         //getContentResolver()は他のアプリにアクセスするためのインスタンスを取得する
         //インスタンスがシステム側で取得済みなのでnewは付けなくてよい
-        try (java.io.OutputStream outputStream = getContentResolver().openOutputStream(uri);
-             java.io.BufferedWriter writer = new java.io.BufferedWriter(new java.io.OutputStreamWriter(outputStream, "UTF-8"))) {
+        try (OutputStream outputStream = getContentResolver().openOutputStream(uri);
+             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, "UTF-8"))) {
             writer.write(csvData);
-            android.widget.Toast.makeText(this, "CSVのエクスポートに成功しました", android.widget.Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.csv_export_success), Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
             e.printStackTrace();
-            android.widget.Toast.makeText(this, "エクスポートに失敗しました: " + e.getMessage(), android.widget.Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.csv_export_failed, e.getMessage()), Toast.LENGTH_SHORT).show();
         }
     }
     //
@@ -268,7 +273,7 @@ public class MainActivity extends AppCompatActivity {
         List<Contact> contacts = dbHelper.getAllContacts(currentSortOrder);
         //リストが空なら通知して終了
         if (contacts.isEmpty()) {
-            android.widget.Toast.makeText(this, "エクスポートするデータがありません", android.widget.Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.csv_no_data_to_export), Toast.LENGTH_SHORT).show();
             return;
         }
         //CsvManagerを使ってCSV文字列を生成
@@ -296,8 +301,8 @@ public class MainActivity extends AppCompatActivity {
             });
     //ファイルを読み込んでDBに保存する処理
     private void readCsvFromUri(android.net.Uri uri) {
-        try (java.io.InputStream inputStream = getContentResolver().openInputStream(uri);
-             java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(inputStream, "UTF-8"))) {
+        try (InputStream inputStream = getContentResolver().openInputStream(uri);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"))) {
 
             StringBuilder sb = new StringBuilder();
             String line;
@@ -309,7 +314,7 @@ public class MainActivity extends AppCompatActivity {
             List<Contact> importedContacts = CsvManager.importFromCsv(sb.toString());
 
             if (importedContacts.isEmpty()) {
-                android.widget.Toast.makeText(this, "インポートできるデータが見つかりませんでした", android.widget.Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.csv_import_no_data), Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -330,12 +335,12 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
 
-            android.widget.Toast.makeText(this, successCount + "件の連絡先をインポートしました", android.widget.Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.csv_import_success, successCount), Toast.LENGTH_SHORT).show();
             loadContactList(); // リスト再描画
 
         } catch (Exception e) {
             e.printStackTrace();
-            android.widget.Toast.makeText(this, "インポートに失敗しました: " + e.getMessage(), android.widget.Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.csv_import_failed, e.getMessage()), Toast.LENGTH_SHORT).show();
         }
     }
     //実行命令
@@ -351,9 +356,9 @@ public class MainActivity extends AppCompatActivity {
     //現在の登録数やバージョンを表示するダイアログ
     private void showAboutDialog() {
         int count = (contactList != null) ? contactList.size() : 0;
-        new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("マイ住所録について")
-                .setMessage("バージョン: 1.0\n現在の登録件数: " + count + "件\n\nご利用ありがとうございます！")
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.about_application)
+                .setMessage(getString(R.string.about_application_message, count))
                 .setPositiveButton("OK", null)
                 .show();
     }

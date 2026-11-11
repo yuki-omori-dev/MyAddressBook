@@ -1,5 +1,6 @@
 package com.yukiomori.myaddressbook;
 
+import android.content.Context;
 import android.widget.EditText;
 
 public class ValidationUtils {
@@ -56,32 +57,33 @@ public class ValidationUtils {
     //入力値をまとめて検証し、エラーメッセージを返す。問題がなければnullを返す
     //チェックしたい項目が増えたり減ったりしたら調整する
     public static String validateContactInput(
+            Context context,
             String lastName, String firstName, String lastNameKana, String firstNameKana,
             String zipCode, String phone, String email) {
 
         if (!hasName(lastName, firstName)) {
-            return "姓か名を入力してください";
+            return context.getString(R.string.val_err_name_required);
         }
         if (!hasCorrespondingKana(lastName, lastNameKana)) {
-            return "みょうじ（ふりがな）を入力してください";
+            return context.getString(R.string.val_err_last_name_kana_required);
         }
         if (!hasCorrespondingKana(firstName, firstNameKana)) {
-            return "なまえ（ふりがな）を入力してください";
+            return context.getString(R.string.val_err_first_name_kana_required);
         }
         if (!isHiraganaOnly(lastNameKana)) {
-            return "みょうじ（ふりがな）は「ひらがな」で入力してください";
+            return context.getString(R.string.val_err_last_name_kana_hiragana);
         }
         if (!isHiraganaOnly(firstNameKana)) {
-            return "なまえ（ふりがな）は「ひらがな」で入力してください";
+            return context.getString(R.string.val_err_first_name_kana_hiragana);
         }
         if (!isValidZipCode(zipCode)) {
-            return "郵便番号は7桁（例: 1234567）で入力してください";
+            return context.getString(R.string.val_err_zip_code);
         }
         if (!isValidPhone(phone)) {
-            return "電話番号は10桁または11桁で入力してください";
+            return context.getString(R.string.val_err_phone);
         }
         if (!isValidEmail(email)) {
-            return "メールアドレスの形式が正しくありません";
+            return context.getString(R.string.val_err_email);
         }
 
         return null;
@@ -98,6 +100,7 @@ public class ValidationUtils {
         }
         return false; //すべて空ならfalse
     }
+
     //EditTextをトリムして値を得るヘルパーメソッド
     public static String getEditTextString(EditText editText) {
         if (editText == null || editText.getText() == null) {

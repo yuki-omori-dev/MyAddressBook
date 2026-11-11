@@ -4,40 +4,39 @@
 
     <item
         android:id="@+id/menu_sort_group"
-        android:title="並べ替え"
+        android:title="@string/menu_sort"
         android:icon="@android:drawable/ic_menu_sort_by_size"
         app:showAsAction="ifRoom">
         <menu>
             <item
                 android:id="@+id/action_sort_asc"
-                android:title="昇順" />
+                android:title="@string/menu_sort_asc" />
             <item
                 android:id="@+id/action_sort_desc"
-                android:title="降順" />
+                android:title="@string/menu_sort_desc" />
             <item
                 android:id="@+id/action_sort_default"
-                android:title="登録順" />
+                android:title="@string/menu_sort_default" />
         </menu>
     </item>
 
     <item
         android:id="@+id/menu_data_group"
-        android:title="データ管理"
+        android:title="@string/menu_data"
         app:showAsAction="never">
         <menu>
             <item
                 android:id="@+id/action_export_csv"
-                android:title="CSVエクスポート(バックアップ)" />
+                android:title="@string/menu_export_csv" />
             <item
                 android:id="@+id/action_import_csv"
-                android:title="CSVインポート(復元)" />
+                android:title="@string/menu_import_csv" />
         </menu>
     </item>
 
     <item
         android:id="@+id/action_about"
-        android:title="アプリについて"
+        android:title="@string/menu_about"
         app:showAsAction="never" />
-
 
 </menu>

@@ -18,7 +18,6 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.lifecycle.ViewTreeLifecycleOwner;
 
 public class ContactDetailActivity extends AppCompatActivity {
     //AddAddressActivityを模して作るのでコピーして転用
@@ -60,21 +59,21 @@ public class ContactDetailActivity extends AppCompatActivity {
             public void handleOnBackPressed() {
                 // 「編集モード中」かつ「未保存の入力がある」場合のみダイアログを表示
                 if (isEditMode && hasTextChanged()) {
-                    new androidx.appcompat.app.AlertDialog.Builder(ContactDetailActivity.this) // ※クラス名に注意
-                            .setTitle("確認")
-                            .setMessage("編集中の内容があります。どうしますか？")
-                            .setPositiveButton("保存して戻る", (dialog, which) -> {
+                    new AlertDialog.Builder(ContactDetailActivity.this)
+                            .setTitle(R.string.dialog_title_confirm)
+                            .setMessage(R.string.dialog_msg_unsaved_edit)
+                            .setPositiveButton(R.string.dialog_btn_save_back, (dialog, which) -> {
                                 // データを上書き保存したあと、画面を閉じて前画面(MainActivity)に戻る
                                 if (saveUpdatedContactAndFinish()) {
                                     finish();
                                 }
                             })
-                            .setNegativeButton("破棄して戻る", (dialog, which) -> {
+                            .setNegativeButton(R.string.dialog_btn_discard_back, (dialog, which) -> {
                                 // 保存せずにそのまま戻る
                                 setEnabled(false);
                                 getOnBackPressedDispatcher().onBackPressed();
                             })
-                            .setNeutralButton("キャンセル", (dialog, which) -> {
+                            .setNeutralButton(R.string.dialog_btn_cancel, (dialog, which) -> {
                                 // 何もしない（編集画面に留まる）
                             })
                             .show();
@@ -159,19 +158,19 @@ public class ContactDetailActivity extends AppCompatActivity {
             return true;
         } else if (id == R.id.action_delete) {
             //誤操作防止の確認ダイアログを作る
-            new androidx.appcompat.app.AlertDialog.Builder(this)
-                    .setTitle("確認")
-                    .setMessage("この連絡先を削除してもよろしいですか？")
-                    .setPositiveButton("削除", (dialog, which) -> {
+            new AlertDialog.Builder(this)
+                    .setTitle(R.string.dialog_title_confirm)
+                    .setMessage(R.string.dialog_msg_delete_confirm)
+                    .setPositiveButton(R.string.btn_delete, (dialog, which) -> {
                         int result = dbHelper.deleteContact(currentUuid);
                         if (result > 0) {
-                            Toast.makeText(this, "削除しました", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this, getString(R.string.toast_delete_success), Toast.LENGTH_SHORT).show();
                             finish();
                         } else {
-                            Toast.makeText(this, "削除に失敗しました", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this, getString(R.string.toast_delete_failed), Toast.LENGTH_SHORT).show();
                         }
                     })
-                    .setNegativeButton("キャンセル", null)
+                    .setNegativeButton(R.string.dialog_btn_cancel, null)
                     .show();
             return true;
         } else if (id == R.id.action_share) {
@@ -201,10 +200,9 @@ public class ContactDetailActivity extends AppCompatActivity {
     private void toggleEditMode(){
         if(!isEditMode){
             isEditMode=true;
-            setFieldsEnabled(true); //isEditModeを引数にすると警告されるのでtrueとした
+            setFieldsEnabled(true);
             changeButtonStyles(true);
-            btnEdit.setText("保存する");
-            Toast.makeText(this,"編集モードになりました",Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.toast_mode_edit), Toast.LENGTH_SHORT).show();
             //編集モードに入った時点でのEditTextの値を保持
             updateInitialValues();
         }else{
@@ -271,14 +269,14 @@ public class ContactDetailActivity extends AppCompatActivity {
         String email = getEditTextString(etEmail);
         String memo = getEditTextString(etMemo);
 
-        //姓か名は入力させ、対応したふりがなも入力させる
-        String errorMessage=ValidationUtils.validateContactInput(
-                lastName,firstName,lastNameKana,firstNameKana,
-                zipCode,phone,email
+        //入力チェック(バリデーション)
+        String errorMessage = ValidationUtils.validateContactInput(
+                this, lastName, firstName, lastNameKana, firstNameKana,
+                zipCode, phone, email
         );
 
         if (errorMessage != null) {
-            Toast.makeText(this,errorMessage,Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show();
             return false;
         }
 
@@ -296,19 +294,18 @@ public class ContactDetailActivity extends AppCompatActivity {
             updateInitialValues();
             if (finishAfterSave) {
                 // ダイアログからの「保存して戻る」用
-                Toast.makeText(this, "更新して保存しました", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.toast_update_save_success), Toast.LENGTH_SHORT).show();
                 return true;
             } else {
                 // 通常の「保存する」ボタン用（閲覧モードに戻る）
-                Toast.makeText(this, "更新しました", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.toast_update_success), Toast.LENGTH_SHORT).show();
                 isEditMode = false;
                 setFieldsEnabled(false);
                 changeButtonStyles(false);
-                btnEdit.setText("編集する");
                 return true;
             }
         } else {
-            Toast.makeText(this, "更新に失敗しました", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.toast_update_failed), Toast.LENGTH_SHORT).show();
             return false;
         }
     }
@@ -367,18 +364,18 @@ public class ContactDetailActivity extends AppCompatActivity {
         String email = getEditTextString(etEmail);
 
         StringBuilder sb = new StringBuilder();
-        sb.append("【連絡先情報】\n");
-        if (!name.isEmpty()) sb.append("氏名: ").append(name).append("\n");
-        if (!phone.isEmpty()) sb.append("電話: ").append(phone).append("\n");
-        if (!address.isEmpty()) sb.append("住所: ").append(address).append("\n");
-        if (!email.isEmpty()) sb.append("メール: ").append(email).append("\n");
+        sb.append(getString(R.string.share_header));
+        if (!name.isEmpty()) sb.append(getString(R.string.share_name, name));
+        if (!phone.isEmpty()) sb.append(getString(R.string.share_phone, phone));
+        if (!address.isEmpty()) sb.append(getString(R.string.share_address, address));
+        if (!email.isEmpty()) sb.append(getString(R.string.share_email, email));
 
         Intent shareIntent = new Intent(Intent.ACTION_SEND);
         shareIntent.setType("text/plain");
         shareIntent.putExtra(Intent.EXTRA_TEXT, sb.toString());
 
         // 共有選択ダイアログを表示
-        startActivity(Intent.createChooser(shareIntent, "連絡先を共有"));
+        startActivity(Intent.createChooser(shareIntent, getString(R.string.csv_share_title)));
     }
 
     //編集モード、閲覧モードに応じてボタンの色とテキストを切り替えるメソッド
@@ -387,12 +384,12 @@ public class ContactDetailActivity extends AppCompatActivity {
             //編集モード時:保存ボタンを明るい緑、戻るボタンを赤に変更
             btnEdit.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#4CAF50"))); //明るい緑
             btnBack.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#E53935"))); //赤
-            btnEdit.setText("保存する");
+            btnEdit.setText(R.string.btn_save);
         } else {
             //閲覧モード時:元の紫・グレーに戻す
             btnEdit.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#FF6200EE"))); //紫
             btnBack.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#757575"))); //グレー
-            btnEdit.setText("編集する");
+            btnEdit.setText(R.string.btn_edit);
         }
     }
 }

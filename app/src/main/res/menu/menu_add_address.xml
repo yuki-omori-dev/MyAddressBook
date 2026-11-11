@@ -4,13 +4,13 @@
 
     <item
         android:id="@+id/action_save"
-        android:title="保存する"
+        android:title="@string/btn_save"
         android:icon="@android:drawable/ic_menu_save"
         app:showAsAction="always" />
 
     <item
         android:id="@+id/action_clear"
-        android:title="入力欄をリセット"
+        android:title="@string/menu_clear_fields"
         android:icon="@android:drawable/ic_menu_close_clear_cancel"
         app:showAsAction="never" />
 

@@ -22,8 +22,6 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import com.google.android.material.textfield.TextInputLayout;
-
 public class AddAddressActivity extends AppCompatActivity {
     //EditTextのデータを格納するための変数。慣習として変数名の頭にetが付くようだ
     private EditText etLastName, etFirstName, etLastNameKana, etFirstNameKana;
@@ -92,10 +90,8 @@ public class AddAddressActivity extends AppCompatActivity {
         Button btnBack = findViewById(R.id.btn_back);
         btnBack.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
         //保存ボタンが押された時、データを保存する処理をする
-        Button btnSave=findViewById(R.id.btn_save);
-        btnSave.setOnClickListener(v->{
-            saveDatabase();
-        });
+        btnSave = findViewById(R.id.btn_save);
+        btnSave.setOnClickListener(v-> saveDatabase());
         //戻るが押されたときの警告ダイアログ処理
         //onBackPressed()が非推奨なので、onCreate内でOnBackPressedDispatcherを使ってコールバックを登録
         getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
@@ -106,17 +102,17 @@ public class AddAddressActivity extends AppCompatActivity {
                         etZipCode, etAddress, etBuildingRoom, etPhone, etEmail, etMemo)) {
                     // 未保存の入力がある場合のみダイアログを表示
                     new androidx.appcompat.app.AlertDialog.Builder(AddAddressActivity.this)
-                            .setTitle("確認")
-                            .setMessage("入力中の内容があります。どうしますか？")
-                            .setPositiveButton("保存して戻る", (dialog, which) -> {
+                            .setTitle(R.string.dialog_title_confirm)
+                            .setMessage(R.string.dialog_msg_unsaved_add)
+                            .setPositiveButton(R.string.dialog_btn_save_back, (dialog, which) -> {
                                 saveDatabase(); // 保存処理
                             })
-                            .setNegativeButton("破棄して戻る", (dialog, which) -> {
+                            .setNegativeButton(R.string.dialog_btn_discard_back, (dialog, which) -> {
                                 // 一時的にこのコールバックを無効化して、再度戻る操作をシステムに流す
                                 setEnabled(false);
                                 getOnBackPressedDispatcher().onBackPressed();
                             })
-                            .setNeutralButton("キャンセル", (dialog, which) -> {
+                            .setNeutralButton(R.string.dialog_btn_cancel, (dialog, which) -> {
                                 // 何もしない（入力画面に留まる）
                             })
                             .show();
@@ -166,7 +162,7 @@ public class AddAddressActivity extends AppCompatActivity {
     }
 
     //EditViewに入力されたデータをDBに保存し、結果をユーザに報告する
-    private void saveDatabase(){
+    private void saveDatabase() {
         String lastName = ValidationUtils.getEditTextString(etLastName);
         String firstName = ValidationUtils.getEditTextString(etFirstName);
         String lastNameKana = ValidationUtils.getEditTextString(etLastNameKana);
@@ -178,32 +174,31 @@ public class AddAddressActivity extends AppCompatActivity {
         String email = ValidationUtils.getEditTextString(etEmail);
         String memo = ValidationUtils.getEditTextString(etMemo);
 
-        //入力チェック(バリデーション)。性か名が入力されていれば登録できることにした
-        //チェック項目を増やした
-        //将来的にxmlの入力欄をTextInputLayoutで囲い、トーストではなく赤いメッセージを出力するようにしたい
-        String errorMessage=ValidationUtils.validateContactInput(
-                lastName,firstName,lastNameKana,firstNameKana,zipCode,phone,email
+        //入力チェック(バリデーション)
+        String errorMessage = ValidationUtils.validateContactInput(
+                this, lastName, firstName, lastNameKana, firstNameKana, zipCode, phone, email
         );
 
-        if (errorMessage!=null) {
-            Toast.makeText(this,errorMessage,Toast.LENGTH_SHORT).show();
+        if (errorMessage != null) {
+            Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show();
             return;
         }
 
         //こちらで想定している最低限の情報が入力されているので、セッターで入力情報を登録
-        Contact contact=Contact.createFromInput(
-                lastName,firstName,lastNameKana,firstNameKana,
-                zipCode,address,buildingRoom,phone,email,memo
+        Contact contact = Contact.createFromInput(
+                lastName, firstName, lastNameKana, firstNameKana,
+                zipCode, address, buildingRoom, phone, email, memo
         );
         //DBに保存する
-        DatabaseHelper dbHelper=new DatabaseHelper(AddAddressActivity.this);
-        long result=dbHelper.insertContact(contact);
-        //結果を判定しユーザに返す
-        if (result!=-1){
-            Toast.makeText(this,"保存しました",Toast.LENGTH_SHORT).show();
-            finish();   //MainActivityに戻る
-        } else {
-            Toast.makeText(this,"保存に失敗しました",Toast.LENGTH_SHORT).show();
+        try (DatabaseHelper dbHelper = new DatabaseHelper(AddAddressActivity.this)) {
+            long result = dbHelper.insertContact(contact);
+            //結果を判定しユーザに返す
+            if (result != -1) {
+                Toast.makeText(this, getString(R.string.toast_save_success), Toast.LENGTH_SHORT).show();
+                finish();   //MainActivityに戻る
+            } else {
+                Toast.makeText(this, getString(R.string.toast_save_failed), Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
@@ -213,14 +208,14 @@ public class AddAddressActivity extends AppCompatActivity {
                 etLastName, etFirstName, etLastNameKana, etFirstNameKana,
                 etZipCode, etAddress, etBuildingRoom, etPhone, etEmail, etMemo
         )) {
-            Toast.makeText(this, "入力されている内容はありません", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.toast_no_unsaved_content), Toast.LENGTH_SHORT).show();
             return;
         }
 
         new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("確認")
-                .setMessage("入力中の内容をすべて消去しますか？")
-                .setPositiveButton("クリア", (dialog, which) -> {
+                .setTitle(R.string.dialog_title_confirm)
+                .setMessage(R.string.dialog_msg_clear_confirm)
+                .setPositiveButton(R.string.btn_clear, (dialog, which) -> {
                     etLastName.setText("");
                     etFirstName.setText("");
                     etLastNameKana.setText("");
@@ -231,9 +226,9 @@ public class AddAddressActivity extends AppCompatActivity {
                     etPhone.setText("");
                     etEmail.setText("");
                     etMemo.setText("");
-                    Toast.makeText(this, "入力欄を消去しました", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, getString(R.string.toast_fields_cleared), Toast.LENGTH_SHORT).show();
                 })
-                .setNegativeButton("キャンセル", null)
+                .setNegativeButton(R.string.dialog_btn_cancel, null)
                 .show();
     }
 

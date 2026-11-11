@@ -4,19 +4,19 @@
 
     <item
         android:id="@+id/action_edit"
-        android:title="編集する"
+        android:title="@string/btn_edit"
         android:icon="@android:drawable/ic_menu_edit"
         app:showAsAction="ifRoom" />
 
     <item
         android:id="@+id/action_delete"
-        android:title="削除する"
+        android:title="@string/menu_delete"
         android:icon="@android:drawable/ic_menu_delete"
         app:showAsAction="ifRoom" />
 
     <item
         android:id="@+id/action_share"
-        android:title="連絡先を共有"
+        android:title="@string/menu_share"
         android:icon="@android:drawable/ic_menu_share"
         app:showAsAction="never" />
 </menu>

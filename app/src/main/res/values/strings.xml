@@ -22,11 +22,74 @@
     <string name="btn_save">保存する</string>
     <string name="btn_back">戻る</string>
     <string name="btn_edit">編集する</string>
+    <string name="btn_clear">クリア</string>
+    <string name="btn_delete">削除</string>
     <string name="dialog_title_confirm">確認</string>
     <string name="dialog_msg_discard">入力中の内容は保存されません。戻ってもよろしいですか？</string>
+    <string name="dialog_msg_unsaved_add">入力中の内容があります。どうしますか？</string>
+    <string name="dialog_msg_unsaved_edit">編集中の内容があります。どうしますか？</string>
+    <string name="dialog_msg_clear_confirm">入力中の内容をすべて消去しますか？</string>
+    <string name="dialog_msg_delete_confirm">この連絡先を削除してもよろしいですか？</string>
+    <string name="dialog_btn_save_back">保存して戻る</string>
+    <string name="dialog_btn_discard_back">破棄して戻る</string>
     <string name="dialog_btn_back">戻る</string>
     <string name="dialog_btn_cancel">キャンセル</string>
 
+    <!-- メニュー類 -->
+    <string name="menu_sort">並べ替え</string>
+    <string name="menu_sort_asc">昇順（あいうえお順）</string>
+    <string name="menu_sort_desc">降順（逆順）</string>
+    <string name="menu_sort_default">登録順（デフォルト）</string>
+    <string name="menu_data">データ管理</string>
+    <string name="menu_export_csv">CSVエクスポート（バックアップ）</string>
+    <string name="menu_import_csv">CSVインポート（復元）</string>
+    <string name="menu_about">アプリについて</string>
+    <string name="menu_clear_fields">入力欄をリセット</string>
+    <string name="menu_delete">削除する</string>
+    <string name="menu_share">連絡先を共有</string>
+
     <!-- 音声読み上げ類 -->
     <string name="desc_add">名前や住所を登録します</string>
+
+    <!-- トースト・メッセージ類 -->
+    <string name="toast_save_success">保存しました</string>
+    <string name="toast_save_failed">保存に失敗しました</string>
+    <string name="toast_update_success">更新しました</string>
+    <string name="toast_update_save_success">更新して保存しました</string>
+    <string name="toast_update_failed">更新に失敗しました</string>
+    <string name="toast_delete_success">削除しました</string>
+    <string name="toast_delete_failed">削除に失敗しました</string>
+    <string name="toast_fields_cleared">入力欄を消去しました</string>
+    <string name="toast_no_unsaved_content">入力されている内容はありません</string>
+    <string name="toast_mode_edit">編集モードになりました</string>
+    <string name="empty_no_contacts">まだ1件も登録されていません</string>
+    <string name="empty_no_search_results">該当する連絡先がありません</string>
+
+    <!-- バリデーションエラーメッセージ -->
+    <string name="val_err_name_required">姓か名を入力してください</string>
+    <string name="val_err_last_name_kana_required">みょうじ（ふりがな）を入力してください</string>
+    <string name="val_err_first_name_kana_required">なまえ（ふりがな）を入力してください</string>
+    <string name="val_err_last_name_kana_hiragana">みょうじ（ふりがな）は「ひらがな」で入力してください</string>
+    <string name="val_err_first_name_kana_hiragana">なまえ（ふりがな）は「ひらがな」で入力してください</string>
+    <string name="val_err_zip_code">郵便番号は7桁（例: 1234567）で入力してください</string>
+    <string name="val_err_phone">電話番号は10桁または11桁で入力してください</string>
+    <string name="val_err_email">メールアドレスの形式が正しくありません</string>
+
+    <!-- CSV・ファイル管理類 -->
+    <string name="csv_export_success">CSVのエクスポートに成功しました</string>
+    <string name="csv_export_failed">エクスポートに失敗しました: %1$s</string>
+    <string name="csv_no_data_to_export">エクスポートするデータがありません</string>
+    <string name="csv_import_no_data">インポートできるデータが見つかりませんでした</string>
+    <string name="csv_import_success">%1$d件の連絡先をインポートしました</string>
+    <string name="csv_import_failed">インポートに失敗しました: %1$s</string>
+    <string name="csv_share_title">連絡先を共有</string>
+
+    <!-- アプリ情報 -->
+    <string name="about_application">マイ住所録について</string>
+    <string name="about_application_message">バージョン: 1.0\n現在の登録件数: %1$d件\n\nご利用ありがとうございます！</string>
+    <string name="share_header">【連絡先情報】\n</string>
+    <string name="share_name">氏名: %1$s\n</string>
+    <string name="share_phone">電話: %1$s\n</string>
+    <string name="share_address">住所: %1$s\n</string>
+    <string name="share_email">メール: %1$s\n</string>
 </resources>

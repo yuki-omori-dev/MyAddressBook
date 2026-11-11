@@ -3,28 +3,41 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
-        android:id="@+id/action_sort_asc"
-        android:title="昇順に並べ替え"
-        app:showAsAction="never" />
+        android:id="@+id/menu_sort_group"
+        android:title="並べ替え"
+        android:icon="@android:drawable/ic_menu_sort_by_size"
+        app:showAsAction="ifRoom">
+        <menu>
+            <item
+                android:id="@+id/action_sort_asc"
+                android:title="昇順" />
+            <item
+                android:id="@+id/action_sort_desc"
+                android:title="降順" />
+            <item
+                android:id="@+id/action_sort_default"
+                android:title="登録順" />
+        </menu>
+    </item>
 
     <item
-        android:id="@+id/action_sort_desc"
-        android:title="降順に並べ替え"
-        app:showAsAction="never" />
+        android:id="@+id/menu_data_group"
+        android:title="データ管理"
+        app:showAsAction="never">
+        <menu>
+            <item
+                android:id="@+id/action_export_csv"
+                android:title="CSVエクスポート(バックアップ)" />
+            <item
+                android:id="@+id/action_import_csv"
+                android:title="CSVインポート(復元)" />
+        </menu>
+    </item>
 
     <item
-        android:id="@+id/action_sort_default"
-        android:title="登録順に並べ替え"
+        android:id="@+id/action_about"
+        android:title="アプリについて"
         app:showAsAction="never" />
 
-    <item
-        android:id="@+id/action_import_csv"
-        android:title="CSVインスポート(リストア)"
-        app:showAsAction="never" />
-
-    <item
-        android:id="@+id/action_export_csv"
-        android:title="CSVエクスポート(バックアップ)"
-        app:showAsAction="never" />
 
 </menu>

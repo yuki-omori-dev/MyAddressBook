@@ -123,17 +123,18 @@ public class MainActivity extends AppCompatActivity {
             public void afterTextChanged(android.text.Editable s) {}
         });
 
-
         //一覧の項目がタップされたときの処理
         listView.setOnItemClickListener((parent, view, position, id)->{
-            //タップされた行(position)のContactオブジェクトを取得
-            Contact selectedContact=contactList.get(position);
+            //元のリストのポジションではなく、検索後に作られたリストのポジションのContactを取得
+            Contact selectedContact=(Contact)parent.getItemAtPosition(position);
             //ContactDetailActivityへのIntentを作成
-            Intent intent=new Intent(MainActivity.this,ContactDetailActivity.class);
-            //選択された連絡先のUUIDをIntentに持たせる(キー名:"EXTRA_UUID")
-            intent.putExtra("EXTRA_UUID",selectedContact.getUuid());
-            //画面遷移をする
-            startActivity(intent);
+            if (selectedContact != null) {
+                Intent intent = new Intent(MainActivity.this, ContactDetailActivity.class);
+                //選択された連絡先のUUIDをIntentに持たせる(キー名:"EXTRA_UUID")
+                intent.putExtra("EXTRA_UUID", selectedContact.getUuid());
+                //画面遷移をする
+                startActivity(intent);
+            }
         });
 
     }
@@ -176,12 +177,16 @@ public class MainActivity extends AppCompatActivity {
             loadContactList();
             return true;
         } else if (id == R.id.action_import_csv) {
-            // CSVインポートを実行
+            //CSVインポートを実行
             startCsvImport();
             return true;
         } else if (id == R.id.action_export_csv) {
-            // CSVエクスポートを実行
+            //CSVエクスポートを実行
             startCsvExport();
+            return true;
+        } else if (id == R.id.action_about) {
+            //アプリ情報の表示
+            showAboutDialog();
             return true;
         }
 
@@ -342,5 +347,15 @@ public class MainActivity extends AppCompatActivity {
         importCsvLauncher.launch(intent);
     }
     //ここまでCSVインポート処理
+
+    //現在の登録数やバージョンを表示するダイアログ
+    private void showAboutDialog() {
+        int count = (contactList != null) ? contactList.size() : 0;
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("マイ住所録について")
+                .setMessage("バージョン: 1.0\n現在の登録件数: " + count + "件\n\nご利用ありがとうございます！")
+                .setPositiveButton("OK", null)
+                .show();
+    }
 
 }

@@ -2,7 +2,11 @@ package com.yukiomori.myaddressbook;
 
 import static com.yukiomori.myaddressbook.R.*;
 
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -24,6 +28,7 @@ public class AddAddressActivity extends AppCompatActivity {
     //EditTextのデータを格納するための変数。慣習として変数名の頭にetが付くようだ
     private EditText etLastName, etFirstName, etLastNameKana, etFirstNameKana;
     private EditText etZipCode, etAddress, etBuildingRoom, etPhone, etEmail, etMemo;
+    private Button btnSave;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,6 +86,8 @@ public class AddAddressActivity extends AppCompatActivity {
         });
         //findViewByIdをまとめたメソッド
         initViews();
+        //文字が入力されるとボタンの色が変わる
+        setupInputWatchers();
         //戻るボタンイベントの設定。入力途中だったときバック処理に飛ぶ
         Button btnBack = findViewById(R.id.btn_back);
         btnBack.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
@@ -133,11 +140,13 @@ public class AddAddressActivity extends AppCompatActivity {
         etPhone = findViewById(id.edit_phone);
         etEmail = findViewById(id.edit_email);
         etMemo = findViewById(id.edit_memo);
+
+        btnSave = findViewById(R.id.btn_save);
     }
     // メニューを表示する機能
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_contact_detail, menu);
+        getMenuInflater().inflate(R.menu.menu_add_address, menu);
         return true;
     }
     // メニューが押された時の処理
@@ -145,11 +154,11 @@ public class AddAddressActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
 
-        if (id == R.id.action_edit) {
-            //これは使いまわしの仮設定なので、メニューの内容と処理が決まったら書く
+        if (id == R.id.action_save) {
+            saveDatabase();
             return true;
-        } else if (id == R.id.action_delete) {
-            //上に同じ
+        } else if (id == R.id.action_clear) {
+            clearAllFields();
             return true;
         }
 
@@ -196,6 +205,80 @@ public class AddAddressActivity extends AppCompatActivity {
         } else {
             Toast.makeText(this,"保存に失敗しました",Toast.LENGTH_SHORT).show();
         }
+    }
+
+    // 入力中のデータを一括消去(リセット)するメソッド
+    private void clearAllFields() {
+        if (!ValidationUtils.hasUnsavedChanges(
+                etLastName, etFirstName, etLastNameKana, etFirstNameKana,
+                etZipCode, etAddress, etBuildingRoom, etPhone, etEmail, etMemo
+        )) {
+            Toast.makeText(this, "入力されている内容はありません", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("確認")
+                .setMessage("入力中の内容をすべて消去しますか？")
+                .setPositiveButton("クリア", (dialog, which) -> {
+                    etLastName.setText("");
+                    etFirstName.setText("");
+                    etLastNameKana.setText("");
+                    etFirstNameKana.setText("");
+                    etZipCode.setText("");
+                    etAddress.setText("");
+                    etBuildingRoom.setText("");
+                    etPhone.setText("");
+                    etEmail.setText("");
+                    etMemo.setText("");
+                    Toast.makeText(this, "入力欄を消去しました", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("キャンセル", null)
+                .show();
+    }
+
+    //入力の有無に応じて保存ボタンの色を変更するメソッド
+    private void updateSaveButtonState() {
+        boolean hasInput = ValidationUtils.hasUnsavedChanges(
+                etLastName, etFirstName, etLastNameKana, etFirstNameKana,
+                etZipCode, etAddress, etBuildingRoom, etPhone, etEmail, etMemo
+        );
+
+        if (hasInput) {
+            // 何らかの入力がある場合:明るい緑色
+            btnSave.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#4CAF50")));
+        } else {
+            // 全て未入力の場合:元の紫色
+            btnSave.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#FF6200EE")));
+        }
+    }
+
+    //全EditTextに文字変化リスナーを一括セットするメソッド
+    private void setupInputWatchers() {
+        TextWatcher watcher = new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                //文字が入力・変更されるたびにボタン色を更新
+                updateSaveButtonState();
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+        };
+
+        etLastName.addTextChangedListener(watcher);
+        etFirstName.addTextChangedListener(watcher);
+        etLastNameKana.addTextChangedListener(watcher);
+        etFirstNameKana.addTextChangedListener(watcher);
+        etZipCode.addTextChangedListener(watcher);
+        etAddress.addTextChangedListener(watcher);
+        etBuildingRoom.addTextChangedListener(watcher);
+        etPhone.addTextChangedListener(watcher);
+        etEmail.addTextChangedListener(watcher);
+        etMemo.addTextChangedListener(watcher);
     }
 
 }

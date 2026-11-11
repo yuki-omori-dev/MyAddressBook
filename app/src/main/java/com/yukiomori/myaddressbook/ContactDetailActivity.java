@@ -1,6 +1,7 @@
 package com.yukiomori.myaddressbook;
 
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
@@ -159,9 +160,9 @@ public class ContactDetailActivity extends AppCompatActivity {
         } else if (id == R.id.action_delete) {
             //誤操作防止の確認ダイアログを作る
             new androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("確認")
-            .setMessage("この連絡先を削除してもよろしいですか？")
-                    .setPositiveButton("削除",(dialog,which)->{
+                    .setTitle("確認")
+                    .setMessage("この連絡先を削除してもよろしいですか？")
+                    .setPositiveButton("削除", (dialog, which) -> {
                         int result = dbHelper.deleteContact(currentUuid);
                         if (result > 0) {
                             Toast.makeText(this, "削除しました", Toast.LENGTH_SHORT).show();
@@ -170,8 +171,11 @@ public class ContactDetailActivity extends AppCompatActivity {
                             Toast.makeText(this, "削除に失敗しました", Toast.LENGTH_SHORT).show();
                         }
                     })
-                            .setNegativeButton("キャンセル",null)
-                                    .show();
+                    .setNegativeButton("キャンセル", null)
+                    .show();
+            return true;
+        } else if (id == R.id.action_share) {
+            shareContact();
             return true;
         }
 
@@ -198,6 +202,7 @@ public class ContactDetailActivity extends AppCompatActivity {
         if(!isEditMode){
             isEditMode=true;
             setFieldsEnabled(true); //isEditModeを引数にすると警告されるのでtrueとした
+            changeButtonStyles(true);
             btnEdit.setText("保存する");
             Toast.makeText(this,"編集モードになりました",Toast.LENGTH_SHORT).show();
             //編集モードに入った時点でのEditTextの値を保持
@@ -274,6 +279,7 @@ public class ContactDetailActivity extends AppCompatActivity {
 
         if (errorMessage != null) {
             Toast.makeText(this,errorMessage,Toast.LENGTH_SHORT).show();
+            return false;
         }
 
         //Contactオブジェクトの作成
@@ -297,6 +303,7 @@ public class ContactDetailActivity extends AppCompatActivity {
                 Toast.makeText(this, "更新しました", Toast.LENGTH_SHORT).show();
                 isEditMode = false;
                 setFieldsEnabled(false);
+                changeButtonStyles(false);
                 btnEdit.setText("編集する");
                 return true;
             }
@@ -350,5 +357,42 @@ public class ContactDetailActivity extends AppCompatActivity {
             return "";
         }
         return editText.getText().toString().trim();
+    }
+
+    //連絡先を他アプリに共有するメソッド
+    private void shareContact() {
+        String name = (getEditTextString(etLastName) + " " + getEditTextString(etFirstName)).trim();
+        String phone = getEditTextString(etPhone);
+        String address = (getEditTextString(etAddress) + " " + getEditTextString(etBuildingRoom)).trim();
+        String email = getEditTextString(etEmail);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("【連絡先情報】\n");
+        if (!name.isEmpty()) sb.append("氏名: ").append(name).append("\n");
+        if (!phone.isEmpty()) sb.append("電話: ").append(phone).append("\n");
+        if (!address.isEmpty()) sb.append("住所: ").append(address).append("\n");
+        if (!email.isEmpty()) sb.append("メール: ").append(email).append("\n");
+
+        Intent shareIntent = new Intent(Intent.ACTION_SEND);
+        shareIntent.setType("text/plain");
+        shareIntent.putExtra(Intent.EXTRA_TEXT, sb.toString());
+
+        // 共有選択ダイアログを表示
+        startActivity(Intent.createChooser(shareIntent, "連絡先を共有"));
+    }
+
+    //編集モード、閲覧モードに応じてボタンの色とテキストを切り替えるメソッド
+    private void changeButtonStyles(boolean isEdit) {
+        if (isEdit) {
+            //編集モード時:保存ボタンを明るい緑、戻るボタンを赤に変更
+            btnEdit.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#4CAF50"))); //明るい緑
+            btnBack.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#E53935"))); //赤
+            btnEdit.setText("保存する");
+        } else {
+            //閲覧モード時:元の紫・グレーに戻す
+            btnEdit.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#FF6200EE"))); //紫
+            btnBack.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#757575"))); //グレー
+            btnEdit.setText("編集する");
+        }
     }
 }

@@ -1,5 +1,7 @@
 package com.yukiomori.myaddressbook;
 
+import android.widget.EditText;
+
 public class ValidationUtils {
     //ここから個別の項目についてのバリデーション
     //姓か名のどちらかが入力されているか
@@ -83,5 +85,24 @@ public class ValidationUtils {
         }
 
         return null;
+    }
+
+    //可変長引数でEditTextをまとめて受け取り、入力されている項目があればtrueを返す
+    public static boolean hasUnsavedChanges(EditText... editTexts){
+        if (editTexts == null) return false;
+
+        for (EditText editText : editTexts) {
+            if (!getEditTextString(editText).isEmpty()) {
+                return true;
+            }
+        }
+        return false; //すべて空ならfalse
+    }
+    //EditTextをトリムして値を得るヘルパーメソッド
+    public static String getEditTextString(EditText editText) {
+        if (editText == null || editText.getText() == null) {
+            return "";
+        }
+        return editText.getText().toString().trim();
     }
 }

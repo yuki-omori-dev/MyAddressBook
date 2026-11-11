@@ -37,7 +37,7 @@ public class CsvManager {
         return value;
     }
 
-    // CSV文字列からContactのリストに変換するインポート機能
+    //CSV文字列からContactのリストに変換するインポート機能
     public static List<Contact> importFromCsv(String csvContent) {
         List<Contact> contacts = new ArrayList<>();
         if (csvContent == null || csvContent.isEmpty()) {
@@ -45,8 +45,17 @@ public class CsvManager {
         }
 
         String[] lines = csvContent.split("\n");
-        //0行目はヘッダーなのでi=1からスタート
-        for (int i = 1; i < lines.length; i++) {
+        int startIndex=0;
+        //1行目がヘッダーかチェック
+        if(lines.length>0){
+            String firstLine=lines[0].trim();
+            //大文字・小文字を区別せずUUIDまたは姓が含まれていればヘッダー行と判断する
+            if(firstLine.toUpperCase().contains("UUID")||firstLine.contains("姓")){
+                startIndex=1;   //1行目をスキップ
+            }
+        }
+
+        for (int i = startIndex; i < lines.length; i++) {
             String line = lines[i].trim();
             if (line.isEmpty()) continue;
 
@@ -55,6 +64,8 @@ public class CsvManager {
 
             if (tokens.length >= 11) {
                 String uuid = unescapeCsv(tokens[0]);
+                //ダブルチェックにより途中にヘッダー文字列が紛れていたらスキップしてデータを保護
+                if (uuid.equalsIgnoreCase("UUID")) {continue;}
                 String lastName = unescapeCsv(tokens[1]);
                 String firstName = unescapeCsv(tokens[2]);
                 String lastNameKana = unescapeCsv(tokens[3]);

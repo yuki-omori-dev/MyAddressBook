@@ -94,7 +94,9 @@ public class AddAddressActivity extends AppCompatActivity {
         getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-                if (hasUnsavedChanges()) {
+                if (ValidationUtils.hasUnsavedChanges(
+                        etLastName, etFirstName, etLastNameKana, etFirstNameKana,
+                        etZipCode, etAddress, etBuildingRoom, etPhone, etEmail, etMemo)) {
                     // 未保存の入力がある場合のみダイアログを表示
                     new androidx.appcompat.app.AlertDialog.Builder(AddAddressActivity.this)
                             .setTitle("確認")
@@ -156,16 +158,16 @@ public class AddAddressActivity extends AppCompatActivity {
 
     //EditViewに入力されたデータをDBに保存し、結果をユーザに報告する
     private void saveDatabase(){
-        String lastName = getEditTextString(etLastName);
-        String firstName = getEditTextString(etFirstName);
-        String lastNameKana = getEditTextString(etLastNameKana);
-        String firstNameKana = getEditTextString(etFirstNameKana);
-        String zipCode = getEditTextString(etZipCode);
-        String address = getEditTextString(etAddress);
-        String buildingRoom = getEditTextString(etBuildingRoom);
-        String phone = getEditTextString(etPhone);
-        String email = getEditTextString(etEmail);
-        String memo = getEditTextString(etMemo);
+        String lastName = ValidationUtils.getEditTextString(etLastName);
+        String firstName = ValidationUtils.getEditTextString(etFirstName);
+        String lastNameKana = ValidationUtils.getEditTextString(etLastNameKana);
+        String firstNameKana = ValidationUtils.getEditTextString(etFirstNameKana);
+        String zipCode = ValidationUtils.getEditTextString(etZipCode);
+        String address = ValidationUtils.getEditTextString(etAddress);
+        String buildingRoom = ValidationUtils.getEditTextString(etBuildingRoom);
+        String phone = ValidationUtils.getEditTextString(etPhone);
+        String email = ValidationUtils.getEditTextString(etEmail);
+        String memo = ValidationUtils.getEditTextString(etMemo);
 
         //入力チェック(バリデーション)。性か名が入力されていれば登録できることにした
         //チェック項目を増やした
@@ -195,31 +197,5 @@ public class AddAddressActivity extends AppCompatActivity {
             Toast.makeText(this,"保存に失敗しました",Toast.LENGTH_SHORT).show();
         }
     }
-
-    //入力途中のデータがあるかをチェックするメソッド
-    private boolean hasUnsavedChanges(){
-        String lastName = getEditTextString(etLastName);
-        String firstName = getEditTextString(etFirstName);
-        String lastNameKana = getEditTextString(etLastNameKana);
-        String firstNameKana = getEditTextString(etFirstNameKana);
-        String zipCode = getEditTextString(etZipCode);
-        String address = getEditTextString(etAddress);
-        String buildingRoom = getEditTextString(etBuildingRoom);
-        String phone = getEditTextString(etPhone);
-        String email = getEditTextString(etEmail);
-        String memo = getEditTextString(etMemo);
-        return !lastName.isEmpty()||!firstName.isEmpty()||!lastNameKana.isEmpty()
-                ||!firstNameKana.isEmpty()||!zipCode.isEmpty()||!address.isEmpty()
-                ||!buildingRoom.isEmpty()||!phone.isEmpty()||!email.isEmpty()||!memo.isEmpty();
-    }
-    //EditTextをトリムして値を得るヘルパーメソッド
-    private String getEditTextString(EditText editText) {
-        if (editText == null || editText.getText() == null) {
-            return "";
-        }
-        return editText.getText().toString().trim();
-    }
-
-
 
 }

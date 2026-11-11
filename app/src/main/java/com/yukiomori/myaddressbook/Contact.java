@@ -64,4 +64,30 @@ public class Contact {
     public String getPhone() { return phone; }
     public String getEmail() { return email; }
     public String getMemo() { return memo; }
+
+    //新規作成用(UUIDを生成して値をセットしContactを返す)
+    public static Contact createFromInput(
+            String lastName, String firstName, String lastNameKana, String firstNameKana,
+            String zipCode, String address, String buildingRoom, String phone, String email, String memo){
+        Contact contact = new Contact(); //デフォルトコンストラクタでUUIDの生成
+        contact.setLastName(lastName);
+        contact.setFirstName(firstName);
+        contact.setLastNameKana(lastNameKana);
+        contact.setFirstNameKana(firstNameKana);
+        contact.setZipCode(zipCode);
+        contact.setAddress(address);
+        contact.setBuildingRoom(buildingRoom);
+        contact.setPhone(phone);
+        contact.setEmail(email);
+        contact.setMemo(memo);
+        return contact;
+    }
+    //更新が行われたとき用(UUIDを指定してContactを返す)
+    public static Contact createFromInputWithUuid(
+            String uuid,
+            String lastName, String firstName, String lastNameKana, String firstNameKana,
+            String zipCode, String address, String buildingRoom, String phone, String email, String memo) {
+        return new Contact(uuid, lastName, firstName, lastNameKana, firstNameKana,
+                zipCode, address, buildingRoom, phone, email, memo);
+    }
 }

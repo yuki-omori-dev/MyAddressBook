@@ -72,8 +72,8 @@
                         android:layout_weight="1"
                         android:layout_marginEnd="4dp"
                         android:hint="@string/hint_last_name"
-                        android:inputType="textPersonName"
-                        android:autofillHints="personName"/>
+                        android:inputType="text"
+                        android:privateImeOptions="defaultInputmode=hiragana,com.google.android.inputmethod.latin.mode=hiragana"/>
 
                     <!--名の入力欄(比率1)-->
                     <EditText
@@ -83,8 +83,8 @@
                         android:layout_weight="1"
                         android:layout_marginStart="4dp"
                         android:hint="@string/hint_first_name"
-                        android:inputType="textPersonName"
-                        android:autofillHints="personName"/>
+                        android:inputType="text"
+                        android:privateImeOptions="defaultInputmode=hiragana,com.google.android.inputmethod.latin.mode=hiragana"/>
                 </LinearLayout>
 
                 <LinearLayout
@@ -102,7 +102,8 @@
                         android:layout_marginEnd="4dp"
                         android:hint="@string/hint_last_name_kana"
                         android:inputType="text"
-                        android:importantForAutofill="no"/>
+                        android:importantForAutofill="no"
+                        android:privateImeOptions="defaultInputmode=hiragana,com.google.android.inputmethod.latin.mode=hiragana"/>
 
                     <EditText
                         android:id="@+id/edit_first_name_kana"
@@ -112,7 +113,8 @@
                         android:layout_marginStart="4dp"
                         android:hint="@string/hint_first_name_kana"
                         android:inputType="text"
-                        android:importantForAutofill="no"/>
+                        android:importantForAutofill="no"
+                        android:privateImeOptions="defaultInputmode=hiragana,com.google.android.inputmethod.latin.mode=hiragana"/>
                 </LinearLayout>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
@@ -152,16 +154,16 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="@string/hint_address"
-                    android:inputType="textPostalAddress"
-                    android:autofillHints="postalAddress"/>
+                    android:inputType="text"
+                    android:privateImeOptions="defaultInputmode=hiragana,com.google.android.inputmethod.latin.mode=hiragana"/>
 
                 <EditText
                     android:id="@+id/edit_building_room"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="@string/hint_building_room"
-                    android:inputType="textPostalAddress"
-                    android:autofillHints="postalAddress"/>
+                    android:inputType="text"
+                    android:privateImeOptions="defaultInputmode=hiragana,com.google.android.inputmethod.latin.mode=hiragana"/>
 
                 <EditText
                     android:id="@+id/edit_phone"
@@ -209,22 +211,44 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="@string/hint_memo"
-                    android:inputType="textMultiLine"
+                    android:inputType="text"
                     android:gravity="top"
                     android:minLines="3"
-                    android:importantForAutofill="no"/>
+                    android:importantForAutofill="no"
+                    android:privateImeOptions="defaultInputmode=hiragana,com.google.android.inputmethod.latin.mode=hiragana"/>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!--保存ボタン(横幅いっぱいに広げ、上下マージンでバランスを取る)-->
-        <Button
-            android:id="@+id/btn_save"
+        <!--ボタンエリア(横並び、比率1:1)-->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:orientation="horizontal"
             android:layout_margin="16dp"
-            android:text="@string/btn_save"
-            android:backgroundTint="#FF6200EE"
-            android:textColor="@android:color/white" />
+            android:weightSum="2">
+
+            <!--戻るボタン-->
+            <Button
+                android:id="@+id/btn_back"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:text="@string/btn_back"
+                android:backgroundTint="#757575"
+                android:textColor="@android:color/white"/>
+
+            <!--保存ボタン-->
+            <Button
+                android:id="@+id/btn_save"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="@string/btn_save"
+                android:backgroundTint="#FF6200EE"
+                android:textColor="@android:color/white"/>
+        </LinearLayout>
      </LinearLayout>
     </ScrollView>
 </LinearLayout>

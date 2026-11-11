@@ -81,13 +81,43 @@ public class AddAddressActivity extends AppCompatActivity {
         });
         //findViewByIdをまとめたメソッド
         initViews();
+        //戻るボタンイベントの設定。入力途中だったときバック処理に飛ぶ
+        Button btnBack = findViewById(R.id.btn_back);
+        btnBack.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
         //保存ボタンが押された時、データを保存する処理をする
         Button btnSave=findViewById(R.id.btn_save);
         btnSave.setOnClickListener(v->{
             saveDatabase();
         });
         //戻るが押されたときの警告ダイアログ処理
-        //は後で書く
+        //onBackPressed()が非推奨なので、onCreate内でOnBackPressedDispatcherを使ってコールバックを登録
+        getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (hasUnsavedChanges()) {
+                    // 未保存の入力がある場合のみダイアログを表示
+                    new androidx.appcompat.app.AlertDialog.Builder(AddAddressActivity.this)
+                            .setTitle("確認")
+                            .setMessage("入力中の内容があります。どうしますか？")
+                            .setPositiveButton("保存して戻る", (dialog, which) -> {
+                                saveDatabase(); // 保存処理
+                            })
+                            .setNegativeButton("破棄して戻る", (dialog, which) -> {
+                                // 一時的にこのコールバックを無効化して、再度戻る操作をシステムに流す
+                                setEnabled(false);
+                                getOnBackPressedDispatcher().onBackPressed();
+                            })
+                            .setNeutralButton("キャンセル", (dialog, which) -> {
+                                // 何もしない（入力画面に留まる）
+                            })
+                            .show();
+                } else {
+                    // 未保存の入力がなければそのまま戻る
+                    setEnabled(false);
+                    getOnBackPressedDispatcher().onBackPressed();
+                }
+            }
+        });
     }
 
     private void initViews(){
@@ -126,47 +156,34 @@ public class AddAddressActivity extends AppCompatActivity {
 
     //EditViewに入力されたデータをDBに保存し、結果をユーザに報告する
     private void saveDatabase(){
-        String lastName=etLastName.getText().toString().trim();
-        String firstName=etFirstName.getText().toString().trim();
-        String lastNameKana=etLastNameKana.getText().toString().trim();
-        String firstNameKana=etFirstNameKana.getText().toString().trim();
-        String zipCode=etZipCode.getText().toString().trim();
-        String address=etAddress.getText().toString().trim();
-        String buildingRoom=etBuildingRoom.getText().toString().trim();
-        String phone=etPhone.getText().toString().trim();
-        String email=etEmail.getText().toString().trim();
-        String memo=etMemo.getText().toString().trim();
+        String lastName = getEditTextString(etLastName);
+        String firstName = getEditTextString(etFirstName);
+        String lastNameKana = getEditTextString(etLastNameKana);
+        String firstNameKana = getEditTextString(etFirstNameKana);
+        String zipCode = getEditTextString(etZipCode);
+        String address = getEditTextString(etAddress);
+        String buildingRoom = getEditTextString(etBuildingRoom);
+        String phone = getEditTextString(etPhone);
+        String email = getEditTextString(etEmail);
+        String memo = getEditTextString(etMemo);
 
         //入力チェック(バリデーション)。性か名が入力されていれば登録できることにした
+        //チェック項目を増やした
         //将来的にxmlの入力欄をTextInputLayoutで囲い、トーストではなく赤いメッセージを出力するようにしたい
-        if(lastName.isEmpty()&&firstName.isEmpty()){
-            Toast.makeText(AddAddressActivity.this, "姓か名を入力してください",Toast.LENGTH_SHORT).show();
-            return;
-        }
-        //姓が入力されているのに、姓のふりがなが空ならNG
-        if (!lastName.isEmpty() && lastNameKana.isEmpty()) {
-            Toast.makeText(this, "みょうじ(ふりがな)を入力してください",Toast.LENGTH_SHORT).show();
+        String errorMessage=ValidationUtils.validateContactInput(
+                lastName,firstName,lastNameKana,firstNameKana,zipCode,phone,email
+        );
+
+        if (errorMessage!=null) {
+            Toast.makeText(this,errorMessage,Toast.LENGTH_SHORT).show();
             return;
         }
 
-        //名が入力されているのに、名のふりがなが空ならNG
-        if (!firstName.isEmpty() && firstNameKana.isEmpty()) {
-            Toast.makeText(this, "なまえ(ふりがな)を入力してください",Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        //最低限の情報があるので、セッターで入力情報を登録
-        Contact contact=new Contact();
-        contact.setLastName(lastName);
-        contact.setFirstName(firstName);
-        contact.setLastNameKana(lastNameKana);
-        contact.setFirstNameKana(firstNameKana);
-        contact.setZipCode(zipCode);
-        contact.setAddress(address);
-        contact.setBuildingRoom(buildingRoom);
-        contact.setPhone(phone);
-        contact.setEmail(email);
-        contact.setMemo(memo);
+        //こちらで想定している最低限の情報が入力されているので、セッターで入力情報を登録
+        Contact contact=Contact.createFromInput(
+                lastName,firstName,lastNameKana,firstNameKana,
+                zipCode,address,buildingRoom,phone,email,memo
+        );
         //DBに保存する
         DatabaseHelper dbHelper=new DatabaseHelper(AddAddressActivity.this);
         long result=dbHelper.insertContact(contact);
@@ -177,7 +194,32 @@ public class AddAddressActivity extends AppCompatActivity {
         } else {
             Toast.makeText(this,"保存に失敗しました",Toast.LENGTH_SHORT).show();
         }
-
     }
+
+    //入力途中のデータがあるかをチェックするメソッド
+    private boolean hasUnsavedChanges(){
+        String lastName = getEditTextString(etLastName);
+        String firstName = getEditTextString(etFirstName);
+        String lastNameKana = getEditTextString(etLastNameKana);
+        String firstNameKana = getEditTextString(etFirstNameKana);
+        String zipCode = getEditTextString(etZipCode);
+        String address = getEditTextString(etAddress);
+        String buildingRoom = getEditTextString(etBuildingRoom);
+        String phone = getEditTextString(etPhone);
+        String email = getEditTextString(etEmail);
+        String memo = getEditTextString(etMemo);
+        return !lastName.isEmpty()||!firstName.isEmpty()||!lastNameKana.isEmpty()
+                ||!firstNameKana.isEmpty()||!zipCode.isEmpty()||!address.isEmpty()
+                ||!buildingRoom.isEmpty()||!phone.isEmpty()||!email.isEmpty()||!memo.isEmpty();
+    }
+    //EditTextをトリムして値を得るヘルパーメソッド
+    private String getEditTextString(EditText editText) {
+        if (editText == null || editText.getText() == null) {
+            return "";
+        }
+        return editText.getText().toString().trim();
+    }
+
+
 
 }

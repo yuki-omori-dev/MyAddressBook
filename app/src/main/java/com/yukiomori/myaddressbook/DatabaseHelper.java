@@ -85,23 +85,36 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         contentValues.put(COLUMN_MEMO, contact.getMemo());
         //書き込みが可能なデータベースを取得
         SQLiteDatabase db=this.getWritableDatabase();
-        //データベースに挿入
-        long result=db.insert(TABLE_NAME,null,contentValues);
+        //データベースに挿入。UUIDが重複していた場合は上書き(REPLACE)する
+        long result = db.insertWithOnConflict(
+                TABLE_NAME,
+                null,
+                contentValues,
+                SQLiteDatabase.CONFLICT_REPLACE
+        );
         //データベースを閉じる
         db.close();
         return result;
     }
-
-    //データベースから全データを取り出してListにする
-    public List<Contact> getAllContacts(){
+    //引数が空のときは代わりに引数にnullを入れて作動させる。nullのときはデフォルトの並び順として一覧表示される
+    public List<Contact> getAllContacts() {
+        return getAllContacts(null);
+    }
+    //ORDER BYを指定して取得できるメソッド
+    public List<Contact> getAllContacts(String sortOrder) {
         List<Contact> contactList=new ArrayList<>();
-        //読み出し専用のデータベースを取得
-        SQLiteDatabase db = this.getReadableDatabase();
-        //SELECT * FROM contactsのSQL文
-        //CursorはSQLiteにおいては表のどの行をいま見ているかを指し示す役割
-        //取得時は最初の行の一つ手前を指している状態なので注意
-        Cursor cursor=db.rawQuery("SELECT * FROM "+ TABLE_NAME,null);
-        // 結果を1行ずつ取り出す
+        SQLiteDatabase db=this.getReadableDatabase();
+
+        //基本のSQL
+        String sql="SELECT * FROM " + TABLE_NAME;
+
+        //ソート条件が指定されている場合はORDER BYを追加する
+        if (sortOrder != null && !sortOrder.isEmpty()) {
+            sql+=" ORDER BY "+sortOrder;
+        }
+        //ここでDBが並べ替えを行う(nullなら上記のifがスルーされるのでデフォルト順)
+        Cursor cursor=db.rawQuery(sql,null);
+        //カーソルを回してContactオブジェクトのリストを作る
         if (cursor.moveToFirst()) {
             do {
                 // 各カラムの値を取得（文字列がnullなら空文字にする)
@@ -127,10 +140,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             } while (cursor.moveToNext());
         }
 
-        // カーソルとDBを閉じる
         cursor.close();
         db.close();
-
         return contactList;
     }
 

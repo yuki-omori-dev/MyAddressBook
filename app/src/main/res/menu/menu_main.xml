@@ -17,4 +17,14 @@
         android:title="登録順に並べ替え"
         app:showAsAction="never" />
 
+    <item
+        android:id="@+id/action_import_csv"
+        android:title="CSVインスポート(リストア)"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_export_csv"
+        android:title="CSVエクスポート(バックアップ)"
+        app:showAsAction="never" />
+
 </menu>

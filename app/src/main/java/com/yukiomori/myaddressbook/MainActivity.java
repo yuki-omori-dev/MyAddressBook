@@ -6,9 +6,11 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -25,7 +27,17 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
     private ListView listView;
     private DatabaseHelper dbHelper;
-    private List<Contact> contactList;  //保持したほうが扱いやすいのでメンバにしておく
+    //保持したほうが扱いやすいのでメンバにしておく
+    //検索窓が空のときにポートレートランドスケープが切り替わるとエラーを起こすので、初期化しておく
+    //onTextChangedが先に動き出してnull状態のリストを読み込もうとしてヌポイが発生するため
+    private List<Contact> contactList=new ArrayList<>();
+    //SQL命令用の保持用変数
+    private String currentSortOrder = null;
+    //検索窓に入力するたびにオブジェクトを作るのが効率が悪いのでAdapterもメンバを作る
+    private ContactAdapter adapter;
+    // 一時的にCSVデータを保持する変数
+    private String pendingCsvData = "";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,31 +77,46 @@ public class MainActivity extends AppCompatActivity {
             @Override
             //文字が変更されている最中・直後に反応する
             public void onTextChanged(CharSequence s,int start,int before,int count) {
+                //ポートレートランドスケープ時のエラー対策2
+                //contactListがnullなら何もしない
+                if (contactList == null) {
+                    return;
+                }
                 //入力されたキーワードを取得(前後の空白を消して小文字化)
                 //すべて小文字にすることでのちほど大文字小文字の区別なくヒットさせるようにする
                 String query=s.toString().trim().toLowerCase();
-
+                //検索窓が空なら一覧表示に戻る
+                if (query.isEmpty()) {
+                    loadContactList();
+                    return;
+                }
+                //検索ワードのカタカナ変換
+                String queryKatakana=hiraganaToKatakana(query);
                 //絞り込み用の新しいリストを作成
                 List<Contact> filteredList=new ArrayList<>();
 
                 for (Contact contact : contactList) {
                     //姓と名、みょうじとなまえを結合したフルネームと電話番号をリストから取り出して小文字にする
                     //漢字やひらがなを小文字にしようとしてもスルーされるだけでエラーは起きない
-                    String fullName=contact.getLastName()+contact.getFirstName().toLowerCase();
+                    String fullName=contact.getLastName().toLowerCase()+contact.getFirstName().toLowerCase();
                     String fullNameKana=contact.getLastNameKana()+contact.getFirstNameKana().toLowerCase();
                     String phone=contact.getPhone().toLowerCase();
 
                     //部分一致の判定(queryが含まれているか)
                     //queryが空のとき""(空文字)となり、Javaではどんな文字列でも""は必ず含まれているという仕様になっている
                     //つまりすべての連絡先がヒットするので、結果的に初期状態のようにすべてのリストが表示される
-                    if (fullName.contains(query)||fullNameKana.contains(query)||phone.contains(query)){
+                    //カタカナの名前もヒットするように調整
+                    if (fullName.contains(query)||fullName.contains(queryKatakana)
+                            ||fullNameKana.contains(query)||fullNameKana.contains(queryKatakana)
+                            ||phone.contains(query)){
                         filteredList.add(contact);
                     }
                 }
-
-                //絞り込み後のリストをアダプターにセットして表示を更新
-                ContactAdapter adapter=new ContactAdapter(MainActivity.this, filteredList);
-                listView.setAdapter(adapter);
+                //検索結果専用のアダプターを作ってリストビューにセット
+                ContactAdapter searchAdapter = new ContactAdapter(MainActivity.this, filteredList);
+                listView.setAdapter(searchAdapter);
+                //検索にヒットしなければ(サーチ後リストが空なら)メッセージ
+                updateListVisibility(filteredList,true);
             }
 
             @Override
@@ -133,39 +160,28 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
 
-        // 昇順に並べ替え
         if (id == R.id.action_sort_asc) {
-            if (contactList != null) {
-                contactList.sort((c1, c2) -> {
-                    int result = c1.getLastNameKana().compareTo(c2.getLastNameKana());
-                    if (result == 0) {
-                        result = c1.getFirstNameKana().compareTo(c2.getFirstNameKana());
-                    }
-                    return result;
-                });
-                //画面(ListView)のアダプターを再セットして表示を更新する
-                listView.setAdapter(new ContactAdapter(this, contactList));
-            }
+            //昇順
+            currentSortOrder = "last_name_kana ASC, first_name_kana ASC";
+            loadContactList();
             return true;
-
-            // 降順に並べ替え
         } else if (id == R.id.action_sort_desc) {
-            if (contactList != null) {
-                contactList.sort((c1, c2) -> {
-                    int result = c2.getLastNameKana().compareTo(c1.getLastNameKana());
-                    if (result == 0) {
-                        result = c2.getFirstNameKana().compareTo(c1.getFirstNameKana());
-                    }
-                    return result;
-                });
-                //画面(ListView)のアダプターを再セットして表示を更新する
-                listView.setAdapter(new ContactAdapter(this, contactList));
-            }
+            // 降順
+            currentSortOrder = "last_name_kana DESC, first_name_kana DESC";
+            loadContactList();
             return true;
-
-            //登録順(デフォルト)に戻す
         } else if (id == R.id.action_sort_default) {
-            loadContactList(); // 再読み込みしてデフォルト表示に戻す
+            //デフォルト(登録順)
+            currentSortOrder = null;
+            loadContactList();
+            return true;
+        } else if (id == R.id.action_import_csv) {
+            // CSVインポートを実行
+            startCsvImport();
+            return true;
+        } else if (id == R.id.action_export_csv) {
+            // CSVエクスポートを実行
+            startCsvExport();
             return true;
         }
 
@@ -173,11 +189,158 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadContactList(){
-        //DBから全データを取得
-        contactList=dbHelper.getAllContacts();  //取得したリストをメンバに保持
-        //カスタムアダプターをインスタンス化
-        ContactAdapter adapter=new ContactAdapter(this,contactList);
-        //ListViewにAdapterをセット
+        //DBから全件取得
+        contactList = dbHelper.getAllContacts(currentSortOrder);
+
+        //登録データが0件ならメッセージ
+        updateListVisibility(contactList,false);
+        //新しいアダプターを作成してセット
+        adapter = new ContactAdapter(this, contactList);
         listView.setAdapter(adapter);
     }
+
+    //ひらがなをカタカナに変換するメソッド
+    private String hiraganaToKatakana(String str){
+        if(str==null){return "";}
+        StringBuilder sb=new StringBuilder(str);
+        for(int i=0;i<sb.length();i++){
+            char c=sb.charAt(i);
+            //ひらがなの範囲(ぁ:0x3041_ん:0x3093)
+            if(c>='\u3041'&&c<='\u3093'){
+                sb.setCharAt(i,(char)(c+0x60)); //カタカナに変換
+            }
+        }
+        return sb.toString();
+    }
+    //特定条件でメッセージを表示するようにするメソッド
+    //検索中なら引数をtrue、そうでないならfalse
+    private void updateListVisibility(List<Contact> currentList, boolean isSearching) {
+        TextView tvEmpty = findViewById(R.id.tv_empty);
+
+        if (currentList.isEmpty()) {
+            tvEmpty.setVisibility(View.VISIBLE);
+            listView.setVisibility(View.GONE);
+            //DBに1件も登録されていないときと、検索にヒットしなかったときのメッセージ
+            if (contactList.isEmpty()) {
+                tvEmpty.setText("まだ1件も登録されていません");
+            } else if (isSearching) {
+                tvEmpty.setText("該当する連絡先がありません");
+            }
+        } else {
+            tvEmpty.setVisibility(View.GONE);
+            listView.setVisibility(View.VISIBLE);
+        }
+    }
+    //以下からCSVファイルのエクスポートに関わるもの
+    //ファイル保存先が決まった後に実際にデータを書き込む処理を行うランチャー
+    //公式推奨のIntent.ACTION_CREATE_DOCUMENTとActivityResultLauncherを使う
+    private final androidx.activity.result.ActivityResultLauncher<Intent> exportCsvLauncher =
+            registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                    android.net.Uri uri = result.getData().getData();
+                    if (uri != null) {
+                        // 保持しておいたCSV文字列をファイルに書き込む
+                        writeCsvToUri(uri, pendingCsvData);
+                    }
+                }
+            });
+    //実際の書き込み処理
+    private void writeCsvToUri(android.net.Uri uri, String csvData) {
+        //getContentResolver()は他のアプリにアクセスするためのインスタンスを取得する
+        //インスタンスがシステム側で取得済みなのでnewは付けなくてよい
+        try (java.io.OutputStream outputStream = getContentResolver().openOutputStream(uri);
+             java.io.BufferedWriter writer = new java.io.BufferedWriter(new java.io.OutputStreamWriter(outputStream, "UTF-8"))) {
+            writer.write(csvData);
+            android.widget.Toast.makeText(this, "CSVのエクスポートに成功しました", android.widget.Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            e.printStackTrace();
+            android.widget.Toast.makeText(this, "エクスポートに失敗しました: " + e.getMessage(), android.widget.Toast.LENGTH_SHORT).show();
+        }
+    }
+    //
+    private void startCsvExport() {
+        //DBからリストを取得
+        List<Contact> contacts = dbHelper.getAllContacts(currentSortOrder);
+        //リストが空なら通知して終了
+        if (contacts.isEmpty()) {
+            android.widget.Toast.makeText(this, "エクスポートするデータがありません", android.widget.Toast.LENGTH_SHORT).show();
+            return;
+        }
+        //CsvManagerを使ってCSV文字列を生成
+        pendingCsvData = CsvManager.exportToCsv(contacts);
+
+        //保存先ファイル名などを指定してIntentを起動
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("text/csv");
+        intent.putExtra(Intent.EXTRA_TITLE, "address_book_backup.csv");
+
+        exportCsvLauncher.launch(intent);
+    }
+    //ここまでがCSVのエクスポートに関する処理
+    //ここからCSVのインポートに関する処理
+    //ファイル選択用ランチャー
+    private final androidx.activity.result.ActivityResultLauncher<Intent> importCsvLauncher =
+            registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                    android.net.Uri uri = result.getData().getData();
+                    if (uri != null) {
+                        readCsvFromUri(uri);
+                    }
+                }
+            });
+    //ファイルを読み込んでDBに保存する処理
+    private void readCsvFromUri(android.net.Uri uri) {
+        try (java.io.InputStream inputStream = getContentResolver().openInputStream(uri);
+             java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(inputStream, "UTF-8"))) {
+
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line).append("\n");
+            }
+
+            // CsvManagerでContactリストに変換
+            List<Contact> importedContacts = CsvManager.importFromCsv(sb.toString());
+
+            if (importedContacts.isEmpty()) {
+                android.widget.Toast.makeText(this, "インポートできるデータが見つかりませんでした", android.widget.Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // DBにインポート（重複時の挙動としてinsertまたはupdate）
+            int successCount = 0;
+            for (Contact contact : importedContacts) {
+                // 既存のUUIDが被っていなければinsert、被っている場合の処理（今回はシンプルなinsert/updateなど）
+                // ここでは簡易的にinsertContactを試す（主キー重複時はエラーになるので必要に応じ処理）
+                long result = dbHelper.insertContact(contact);
+                if (result != -1) {
+                    successCount++;
+                } else {
+                    // すでに同IDが存在する場合は更新(update)するなどのフォールバックも可能
+                    int updateResult = dbHelper.updateContact(contact);
+                    if (updateResult > 0) {
+                        successCount++;
+                    }
+                }
+            }
+
+            android.widget.Toast.makeText(this, successCount + "件の連絡先をインポートしました", android.widget.Toast.LENGTH_SHORT).show();
+            loadContactList(); // リスト再描画
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            android.widget.Toast.makeText(this, "インポートに失敗しました: " + e.getMessage(), android.widget.Toast.LENGTH_SHORT).show();
+        }
+    }
+    //実行命令
+    private void startCsvImport() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        //text/csvでは受け付けなかったので変更
+        intent.setType("*/*");
+        importCsvLauncher.launch(intent);
+    }
+    //ここまでCSVインポート処理
+
 }

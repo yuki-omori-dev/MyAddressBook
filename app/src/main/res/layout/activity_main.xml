@@ -53,6 +53,17 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tv_empty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="32dp"
+        android:text="まだ1件も登録されていません"
+        android:textSize="16sp"
+        android:textColor="@android:color/darker_gray"
+        android:visibility="gone" />
 </LinearLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton

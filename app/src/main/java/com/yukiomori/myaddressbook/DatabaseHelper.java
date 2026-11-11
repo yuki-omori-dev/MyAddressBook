@@ -215,4 +215,37 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.close();
         return rowsAffected;    //削除された行数
     }
+    //DBを1回開いてデータをまとめて書き出し1回閉じる
+    public int insertContactsBulk(List<Contact> contacts) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        int count = 0;
+
+        db.beginTransaction(); //トランザクション開始(一括処理モードにする)
+        try {
+            for (Contact contact : contacts) {
+                ContentValues values = new ContentValues();
+                values.put(COLUMN_UUID, contact.getUuid());
+                values.put(COLUMN_LAST_NAME, contact.getLastName());
+                values.put(COLUMN_FIRST_NAME, contact.getFirstName());
+                values.put(COLUMN_LAST_NAME_KANA, contact.getLastNameKana());
+                values.put(COLUMN_FIRST_NAME_KANA, contact.getFirstNameKana());
+                values.put(COLUMN_ZIP_CODE, contact.getZipCode());
+                values.put(COLUMN_ADDRESS, contact.getAddress());
+                values.put(COLUMN_BUILDING_ROOM, contact.getBuildingRoom());
+                values.put(COLUMN_PHONE, contact.getPhone());
+                values.put(COLUMN_EMAIL, contact.getEmail());
+                values.put(COLUMN_MEMO, contact.getMemo());
+
+                long result = db.insertWithOnConflict(TABLE_NAME, null, values, SQLiteDatabase.CONFLICT_REPLACE);
+                if (result != -1) {
+                    count++;
+                }
+            }
+            db.setTransactionSuccessful(); //すべての処理が成功したことをマーク
+        } finally {
+            db.endTransaction(); //トランザクション終了(一括でディスクに書き込む)
+            db.close();
+        }
+        return count;
+    }
 }

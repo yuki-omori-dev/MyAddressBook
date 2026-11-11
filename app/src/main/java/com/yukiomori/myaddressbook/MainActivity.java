@@ -317,23 +317,8 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(this, getString(R.string.csv_import_no_data), Toast.LENGTH_SHORT).show();
                 return;
             }
-
-            // DBにインポート（重複時の挙動としてinsertまたはupdate）
-            int successCount = 0;
-            for (Contact contact : importedContacts) {
-                // 既存のUUIDが被っていなければinsert、被っている場合の処理（今回はシンプルなinsert/updateなど）
-                // ここでは簡易的にinsertContactを試す（主キー重複時はエラーになるので必要に応じ処理）
-                long result = dbHelper.insertContact(contact);
-                if (result != -1) {
-                    successCount++;
-                } else {
-                    // すでに同IDが存在する場合は更新(update)するなどのフォールバックも可能
-                    int updateResult = dbHelper.updateContact(contact);
-                    if (updateResult > 0) {
-                        successCount++;
-                    }
-                }
-            }
+            //トランザクション処理
+            int successCount = dbHelper.insertContactsBulk(importedContacts);
 
             Toast.makeText(this, getString(R.string.csv_import_success, successCount), Toast.LENGTH_SHORT).show();
             loadContactList(); // リスト再描画

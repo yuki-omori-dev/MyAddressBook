@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -19,11 +20,10 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.yukiomori.myaddressbook.databinding.ActivityContactDetailBinding;
+
 public class ContactDetailActivity extends AppCompatActivity {
-    //AddAddressActivityを模して作るのでコピーして転用
-    private EditText etLastName, etFirstName, etLastNameKana, etFirstNameKana;
-    private EditText etZipCode, etAddress, etBuildingRoom, etPhone, etEmail, etMemo;
-    private Button btnBack,btnEdit;
+    private ActivityContactDetailBinding binding;
     private boolean isEditMode=false;   //現在が閲覧モードか編集モードかを判定する変数
     private DatabaseHelper dbHelper;    //DBを扱うので準備
     private String currentUuid;         //Intentで受け取るデータの受け皿の宣言
@@ -35,22 +35,56 @@ public class ContactDetailActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         WindowCompat.enableEdgeToEdge(getWindow());
-        setContentView(R.layout.activity_contact_detail);
+        //ViewBindingをインフレート
+        binding = ActivityContactDetailBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
         //作成したツールバーをセットアップ
-        androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+        setSupportActionBar(binding.toolbar);
         //ツールバーがステータスバーと重なっていたので上部の余白を開ける処理
-        ViewCompat.setOnApplyWindowInsetsListener(toolbar, (v, insets) -> {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.toolbar, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(v.getPaddingLeft(), systemBars.top, v.getPaddingRight(), v.getPaddingBottom());
             return insets;
         });
-        //AddAddressActivityの転用
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.layout_container), (v, insets) -> {
+
+        //キーボードが出現した時に、選択した項目にキーボードが被さっていたらスクロールする
+        //ナビゲーションバーまたはキーボードの大きい方の余白をセット
+        ViewCompat.setOnApplyWindowInsetsListener(binding.layoutContainer, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             Insets imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime());
             int bottomPadding = Math.max(systemBars.bottom, imeInsets.bottom);
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, bottomPadding);
+            //キーボードが出現したかの判定
+            boolean isImeVisible = insets.isVisible(WindowInsetsCompat.Type.ime());
+            //出現したら250ms待ってから作動する処理
+            if (isImeVisible) {
+                v.postDelayed(() -> {
+                    View focusedView = getCurrentFocus();
+                    if (focusedView != null) {
+                        //選択されている入力欄の画面上の下端座標を計算
+                        //タップされた入力欄focusViewのY座標location[1]に、入力欄自体の高さを足し入力欄の一番下の位置を求める
+                        int[] location = new int[2];
+                        focusedView.getLocationOnScreen(location);
+                        int viewBottomOnScreen = location[1] + focusedView.getHeight();
+
+                        //キーボードの最上部の画面上座標を計算
+                        //画面全体の高さrootHeightからキーボードの高さimeInsets.bottomを引き、キーボードの一番上の位置を決める
+                        int rootHeight = v.getRootView().getHeight();
+                        int keyboardTopOnScreen = rootHeight - imeInsets.bottom;
+
+                        //入力欄がキーボードの下に隠れている場合のみ、被っている分だけスクロール
+                        if (viewBottomOnScreen > keyboardTopOnScreen) {
+                            //機種ごとのdensity(倍率)を求め、48pxを基準としたマージンとする
+                            float density=getResources().getDisplayMetrics().density;
+                            int marginPx=(int)(48*density);
+
+                            //端末ごとに余白分を計算し余裕を持たせる
+                            int overlap = viewBottomOnScreen - keyboardTopOnScreen + marginPx;
+                            binding.scrollView.smoothScrollBy(0, overlap);
+                        }
+                    }
+                }, 250);
+            }
             return insets;
         });
         //編集モード時に入力途中で戻るが押された時の処理
@@ -84,7 +118,7 @@ public class ContactDetailActivity extends AppCompatActivity {
                 }
             }
         });
-        initViews();
+
         dbHelper = new DatabaseHelper(this);
 
         //IntentからUUIDを受け取る処理
@@ -100,16 +134,16 @@ public class ContactDetailActivity extends AppCompatActivity {
         //入力を不可にしてこれを閲覧モードとする
         setFieldsEnabled(false);
         //戻るボタンイベントの設定。編集途中だったときバック処理に飛ぶ
-        btnBack.setOnClickListener(v->getOnBackPressedDispatcher().onBackPressed());
+        binding.btnBack.setOnClickListener(v->getOnBackPressedDispatcher().onBackPressed());
         //編集ボタンを押したら保存モードへ移行し、ボタン名を保存ボタンに
-        btnEdit.setOnClickListener(v->{
+        binding.btnEdit.setOnClickListener(v->{
             toggleEditMode();
         });
         //電話の部分をタップしたら電話を起動
-        etPhone.setOnClickListener(v -> {
+        binding.editPhone.setOnClickListener(v -> {
             //閲覧モードのときのみ実行
             if (!isEditMode) {
-                String phone = etPhone.getText().toString().trim();
+                String phone = binding.editPhone.getText().toString().trim();
                 if (!phone.isEmpty()) {
                     //ダイヤル画面を開いて番号を入力状態にするところまでのアクション
                     Intent intent = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + phone));
@@ -118,10 +152,10 @@ public class ContactDetailActivity extends AppCompatActivity {
             }
         });
         //メールの部分をタップしたらメールを起動
-        etEmail.setOnClickListener(v -> {
+        binding.editEmail.setOnClickListener(v -> {
             //閲覧モードのときのみ実行
             if (!isEditMode) {
-                String email = etEmail.getText().toString().trim();
+                String email = binding.editEmail.getText().toString().trim();
                 if (!email.isEmpty()) {
                     Intent intent = new Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:" + email));
                     startActivity(intent);
@@ -129,10 +163,10 @@ public class ContactDetailActivity extends AppCompatActivity {
             }
         });
         //住所をタップしたらマップを起動
-        etAddress.setOnClickListener(v -> {
+        binding.editAddress.setOnClickListener(v -> {
             //閲覧モードのときのみ実行
             if (!isEditMode) {
-                String address = etAddress.getText().toString().trim()+etBuildingRoom.getText().toString().trim();
+                String address = binding.editAddress.getText().toString().trim()+binding.editBuildingRoom.getText().toString().trim();
                 if (!address.isEmpty()) {
                     // 住所文字列をエンコードしてURIを作成
                     Uri mapUri = Uri.parse("geo:0,0?q=" + Uri.encode(address));
@@ -141,6 +175,15 @@ public class ContactDetailActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        //Activityが画面から消える時にDB接続を確実に閉じる
+        if (dbHelper != null) {
+            dbHelper.close();
+        }
     }
     //menu形式で作成したXMLを読み込んで使う
     @Override
@@ -181,21 +224,6 @@ public class ContactDetailActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private void initViews() {
-        etLastName=findViewById(R.id.edit_last_name);
-        etFirstName=findViewById(R.id.edit_first_name);
-        etLastNameKana=findViewById(R.id.edit_last_name_kana);
-        etFirstNameKana=findViewById(R.id.edit_first_name_kana);
-        etZipCode=findViewById(R.id.edit_zip_code);
-        etAddress=findViewById(R.id.edit_address);
-        etBuildingRoom=findViewById(R.id.edit_building_room);
-        etPhone=findViewById(R.id.edit_phone);
-        etEmail=findViewById(R.id.edit_email);
-        etMemo=findViewById(R.id.edit_memo);
-
-        btnBack=findViewById(R.id.btn_back);
-        btnEdit=findViewById(R.id.btn_edit);
-    }
     //編集モードに移行する処理をメソッド化した
     private void toggleEditMode(){
         if(!isEditMode){
@@ -213,29 +241,29 @@ public class ContactDetailActivity extends AppCompatActivity {
 
     // 取得したContactデータを各EditTextにセットする
     private void setContactToViews(Contact contact) {
-        etLastName.setText(contact.getLastName());
-        etFirstName.setText(contact.getFirstName());
-        etLastNameKana.setText(contact.getLastNameKana());
-        etFirstNameKana.setText(contact.getFirstNameKana());
-        etZipCode.setText(contact.getZipCode());
-        etAddress.setText(contact.getAddress());
-        etBuildingRoom.setText(contact.getBuildingRoom());
-        etPhone.setText(contact.getPhone());
-        etEmail.setText(contact.getEmail());
-        etMemo.setText(contact.getMemo());
+        binding.editLastName.setText(contact.getLastName());
+        binding.editFirstName.setText(contact.getFirstName());
+        binding.editLastNameKana.setText(contact.getLastNameKana());
+        binding.editFirstNameKana.setText(contact.getFirstNameKana());
+        binding.editZipCode.setText(contact.getZipCode());
+        binding.editAddress.setText(contact.getAddress());
+        binding.editBuildingRoom.setText(contact.getBuildingRoom());
+        binding.editPhone.setText(contact.getPhone());
+        binding.editEmail.setText(contact.getEmail());
+        binding.editMemo.setText(contact.getMemo());
     }
     // 各EditTextの入力の可/不可(enabled)を一括切り替えするメソッド
     private void setFieldsEnabled(boolean enabled) {
-        setEditTextEditable(etLastName, enabled);
-        setEditTextEditable(etFirstName, enabled);
-        setEditTextEditable(etLastNameKana, enabled);
-        setEditTextEditable(etFirstNameKana, enabled);
-        setEditTextEditable(etZipCode, enabled);
-        setEditTextEditable(etAddress, enabled);
-        setEditTextEditable(etBuildingRoom, enabled);
-        setEditTextEditable(etPhone, enabled);
-        setEditTextEditable(etEmail, enabled);
-        setEditTextEditable(etMemo, enabled);
+        setEditTextEditable(binding.editLastName, enabled);
+        setEditTextEditable(binding.editFirstName, enabled);
+        setEditTextEditable(binding.editLastNameKana, enabled);
+        setEditTextEditable(binding.editFirstNameKana, enabled);
+        setEditTextEditable(binding.editZipCode, enabled);
+        setEditTextEditable(binding.editAddress, enabled);
+        setEditTextEditable(binding.editBuildingRoom, enabled);
+        setEditTextEditable(binding.editPhone, enabled);
+        setEditTextEditable(binding.editEmail, enabled);
+        setEditTextEditable(binding.editMemo, enabled);
     }
     //フォーカスを無効にする仕組み
     private void setEditTextEditable(EditText editText, boolean editable) {
@@ -248,7 +276,7 @@ public class ContactDetailActivity extends AppCompatActivity {
             editText.setTextColor(Color.BLACK); //編集モード時:黒文字
         } else {
             //閲覧モード時:電話番号や住所はタップ可能だと分かるように青色にする
-            if (editText == etPhone || editText == etAddress || editText == etEmail) {
+            if (editText == binding.editPhone || editText == binding.editAddress || editText == binding.editEmail) {
                 editText.setTextColor(Color.BLUE);
             } else {
                 editText.setTextColor(Color.BLACK);
@@ -258,16 +286,16 @@ public class ContactDetailActivity extends AppCompatActivity {
 
     //更新を保存してMainに戻るモードと更新を保存して閲覧モードに戻るパターンの2つを条件分岐でまとめたもの
     private boolean saveContact(boolean finishAfterSave) {
-        String lastName = getEditTextString(etLastName);
-        String firstName = getEditTextString(etFirstName);
-        String lastNameKana = getEditTextString(etLastNameKana);
-        String firstNameKana = getEditTextString(etFirstNameKana);
-        String zipCode = getEditTextString(etZipCode);
-        String address = getEditTextString(etAddress);
-        String buildingRoom = getEditTextString(etBuildingRoom);
-        String phone = getEditTextString(etPhone);
-        String email = getEditTextString(etEmail);
-        String memo = getEditTextString(etMemo);
+        String lastName = getEditTextString(binding.editLastName);
+        String firstName = getEditTextString(binding.editFirstName);
+        String lastNameKana = getEditTextString(binding.editLastNameKana);
+        String firstNameKana = getEditTextString(binding.editFirstNameKana);
+        String zipCode = getEditTextString(binding.editZipCode);
+        String address = getEditTextString(binding.editAddress);
+        String buildingRoom = getEditTextString(binding.editBuildingRoom);
+        String phone = getEditTextString(binding.editPhone);
+        String email = getEditTextString(binding.editEmail);
+        String memo = getEditTextString(binding.editMemo);
 
         //入力チェック(バリデーション)
         String errorMessage = ValidationUtils.validateContactInput(
@@ -323,30 +351,30 @@ public class ContactDetailActivity extends AppCompatActivity {
     //編集モード時に内容に変化があったかを確認する
     private boolean hasTextChanged() {
         // 編集開始時の値から1つでも変化していれば true を返す
-        return !getEditTextString(etLastName).equals(initialLastName)
-                || !getEditTextString(etFirstName).equals(initialFirstName)
-                || !getEditTextString(etLastNameKana).equals(initialLastNameKana)
-                || !getEditTextString(etFirstNameKana).equals(initialFirstNameKana)
-                || !getEditTextString(etZipCode).equals(initialZipCode)
-                || !getEditTextString(etAddress).equals(initialAddress)
-                || !getEditTextString(etBuildingRoom).equals(initialBuildingRoom)
-                || !getEditTextString(etPhone).equals(initialPhone)
-                || !getEditTextString(etEmail).equals(initialEmail)
-                || !getEditTextString(etMemo).equals(initialMemo);
+        return !getEditTextString(binding.editLastName).equals(initialLastName)
+                || !getEditTextString(binding.editFirstName).equals(initialFirstName)
+                || !getEditTextString(binding.editLastNameKana).equals(initialLastNameKana)
+                || !getEditTextString(binding.editFirstNameKana).equals(initialFirstNameKana)
+                || !getEditTextString(binding.editZipCode).equals(initialZipCode)
+                || !getEditTextString(binding.editAddress).equals(initialAddress)
+                || !getEditTextString(binding.editBuildingRoom).equals(initialBuildingRoom)
+                || !getEditTextString(binding.editPhone).equals(initialPhone)
+                || !getEditTextString(binding.editEmail).equals(initialEmail)
+                || !getEditTextString(binding.editMemo).equals(initialMemo);
     }
 
     //EditTextの現在の値を初期値(initial〜)として一括更新するメソッド
     private void updateInitialValues() {
-        initialLastName = getEditTextString(etLastName);
-        initialFirstName = getEditTextString(etFirstName);
-        initialLastNameKana = getEditTextString(etLastNameKana);
-        initialFirstNameKana = getEditTextString(etFirstNameKana);
-        initialZipCode = getEditTextString(etZipCode);
-        initialAddress = getEditTextString(etAddress);
-        initialBuildingRoom = getEditTextString(etBuildingRoom);
-        initialPhone = getEditTextString(etPhone);
-        initialEmail = getEditTextString(etEmail);
-        initialMemo = getEditTextString(etMemo);
+        initialLastName = getEditTextString(binding.editLastName);
+        initialFirstName = getEditTextString(binding.editFirstName);
+        initialLastNameKana = getEditTextString(binding.editLastNameKana);
+        initialFirstNameKana = getEditTextString(binding.editFirstNameKana);
+        initialZipCode = getEditTextString(binding.editZipCode);
+        initialAddress = getEditTextString(binding.editAddress);
+        initialBuildingRoom = getEditTextString(binding.editBuildingRoom);
+        initialPhone = getEditTextString(binding.editPhone);
+        initialEmail = getEditTextString(binding.editEmail);
+        initialMemo = getEditTextString(binding.editMemo);
     }
     //EditTextをトリムして値を得るヘルパーメソッド
     private String getEditTextString(EditText editText) {
@@ -358,10 +386,10 @@ public class ContactDetailActivity extends AppCompatActivity {
 
     //連絡先を他アプリに共有するメソッド
     private void shareContact() {
-        String name = (getEditTextString(etLastName) + " " + getEditTextString(etFirstName)).trim();
-        String phone = getEditTextString(etPhone);
-        String address = (getEditTextString(etAddress) + " " + getEditTextString(etBuildingRoom)).trim();
-        String email = getEditTextString(etEmail);
+        String name = (getEditTextString(binding.editLastName) + " " + getEditTextString(binding.editFirstName)).trim();
+        String phone = getEditTextString(binding.editPhone);
+        String address = (getEditTextString(binding.editAddress) + " " + getEditTextString(binding.editBuildingRoom)).trim();
+        String email = getEditTextString(binding.editEmail);
 
         StringBuilder sb = new StringBuilder();
         sb.append(getString(R.string.share_header));
@@ -382,14 +410,14 @@ public class ContactDetailActivity extends AppCompatActivity {
     private void changeButtonStyles(boolean isEdit) {
         if (isEdit) {
             //編集モード時:保存ボタンを明るい緑、戻るボタンを赤に変更
-            btnEdit.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#4CAF50"))); //明るい緑
-            btnBack.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#E53935"))); //赤
-            btnEdit.setText(R.string.btn_save);
+            binding.btnEdit.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#4CAF50"))); //明るい緑
+            binding.btnBack.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#E53935"))); //赤
+            binding.btnEdit.setText(R.string.btn_save);
         } else {
             //閲覧モード時:元の紫・グレーに戻す
-            btnEdit.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#FF6200EE"))); //紫
-            btnBack.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#757575"))); //グレー
-            btnEdit.setText(R.string.btn_edit);
+            binding.btnEdit.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#FF6200EE"))); //紫
+            binding.btnBack.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#757575"))); //グレー
+            binding.btnEdit.setText(R.string.btn_edit);
         }
     }
 }

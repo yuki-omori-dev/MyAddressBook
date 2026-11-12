@@ -19,6 +19,7 @@ import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.yukiomori.myaddressbook.databinding.ActivityMainBinding;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -30,7 +31,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
-    private ListView listView;
+    //ViewBindingを取り入れてみる
+    private ActivityMainBinding binding;
     private DatabaseHelper dbHelper;
     //保持したほうが扱いやすいのでメンバにしておく
     //検索窓が空のときにポートレートランドスケープが切り替わるとエラーを起こすので、初期化しておく
@@ -40,42 +42,36 @@ public class MainActivity extends AppCompatActivity {
     private String currentSortOrder = null;
     //検索窓に入力するたびにオブジェクトを作るのが効率が悪いのでAdapterもメンバを作る
     private ContactAdapter adapter;
-    // 一時的にCSVデータを保持する変数
-    private String pendingCsvData = "";
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         WindowCompat.enableEdgeToEdge(getWindow());
-        setContentView(R.layout.activity_main);
+        //ViewBindingのインフレート
+        binding = ActivityMainBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
         //作成したツールバーをセットアップ
-        androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+        setSupportActionBar(binding.toolbar);
         //ツールバーがステータスバーと重なっていたので上部の余白を開ける処理
-        ViewCompat.setOnApplyWindowInsetsListener(toolbar, (v, insets) -> {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.toolbar, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(v.getPaddingLeft(), systemBars.top, v.getPaddingRight(), v.getPaddingBottom());
             return insets;
         });
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.main, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        //FABのID取得。のちのちViewBindingへの置き換えを試したい
-        FloatingActionButton btnAdd=findViewById(R.id.btn_Add);
         //ほかの初期化の処理
-        listView=findViewById(R.id.list_view);
         dbHelper=new DatabaseHelper(this);
         //タップされたときAddAddressActivityにジャンプ。ということをラムダ式で記述
-        btnAdd.setOnClickListener(v->{
+        binding.btnAdd.setOnClickListener(v->{
             Intent intent=new Intent(MainActivity.this,AddAddressActivity.class);
             startActivity(intent);
         });
         //検索バーに文字が入力されるとリアルタイムで検索するリスナーを設定
-        EditText etSearch=findViewById(R.id.et_search);
-        etSearch.addTextChangedListener(new android.text.TextWatcher() {
+        binding.etSearch.addTextChangedListener(new android.text.TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s,int start,int count,int after) {}
 
@@ -104,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
                     //姓と名、みょうじとなまえを結合したフルネームと電話番号をリストから取り出して小文字にする
                     //漢字やひらがなを小文字にしようとしてもスルーされるだけでエラーは起きない
                     String fullName=contact.getLastName().toLowerCase()+contact.getFirstName().toLowerCase();
-                    String fullNameKana=contact.getLastNameKana()+contact.getFirstNameKana().toLowerCase();
+                    String fullNameKana=contact.getLastNameKana().toLowerCase()+contact.getFirstNameKana().toLowerCase();
                     String phone=contact.getPhone().toLowerCase();
 
                     //部分一致の判定(queryが含まれているか)
@@ -119,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 //検索結果専用のアダプターを作ってリストビューにセット
                 ContactAdapter searchAdapter = new ContactAdapter(MainActivity.this, filteredList);
-                listView.setAdapter(searchAdapter);
+                binding.listView.setAdapter(searchAdapter);
                 //検索にヒットしなければ(サーチ後リストが空なら)メッセージ
                 updateListVisibility(filteredList,true);
             }
@@ -129,7 +125,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         //一覧の項目がタップされたときの処理
-        listView.setOnItemClickListener((parent, view, position, id)->{
+        binding.listView.setOnItemClickListener((parent, view, position, id)->{
             //元のリストのポジションではなく、検索後に作られたリストのポジションのContactを取得
             Contact selectedContact=(Contact)parent.getItemAtPosition(position);
             //ContactDetailActivityへのIntentを作成
@@ -153,6 +149,15 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        //Activityが画面から消える時にDB接続を確実に閉じる
+        if (dbHelper != null) {
+            dbHelper.close();
+        }
     }
 
     //メニューを表示する機能
@@ -206,7 +211,7 @@ public class MainActivity extends AppCompatActivity {
         updateListVisibility(contactList,false);
         //新しいアダプターを作成してセット
         adapter = new ContactAdapter(this, contactList);
-        listView.setAdapter(adapter);
+        binding.listView.setAdapter(adapter);
     }
 
     //ひらがなをカタカナに変換するメソッド
@@ -225,20 +230,18 @@ public class MainActivity extends AppCompatActivity {
     //特定条件でメッセージを表示するようにするメソッド
     //検索中なら引数をtrue、そうでないならfalse
     private void updateListVisibility(List<Contact> currentList, boolean isSearching) {
-        TextView tvEmpty = findViewById(R.id.tv_empty);
-
         if (currentList.isEmpty()) {
-            tvEmpty.setVisibility(View.VISIBLE);
-            listView.setVisibility(View.GONE);
+            binding.tvEmpty.setVisibility(View.VISIBLE);
+            binding.listView.setVisibility(View.GONE);
             //DBに1件も登録されていないときと、検索にヒットしなかったときのメッセージ
             if (contactList.isEmpty()) {
-                tvEmpty.setText(R.string.empty_no_contacts);
+                binding.tvEmpty.setText(R.string.empty_no_contacts);
             } else if (isSearching) {
-                tvEmpty.setText(R.string.empty_no_search_results);
+                binding.tvEmpty.setText(R.string.empty_no_search_results);
             }
         } else {
-            tvEmpty.setVisibility(View.GONE);
-            listView.setVisibility(View.VISIBLE);
+            binding.tvEmpty.setVisibility(View.GONE);
+            binding.listView.setVisibility(View.VISIBLE);
         }
     }
     //以下からCSVファイルのエクスポートに関わるもの
@@ -249,13 +252,20 @@ public class MainActivity extends AppCompatActivity {
                 if (result.getResultCode() == RESULT_OK && result.getData() != null) {
                     android.net.Uri uri = result.getData().getData();
                     if (uri != null) {
-                        // 保持しておいたCSV文字列をファイルに書き込む
-                        writeCsvToUri(uri, pendingCsvData);
+                        //URIを渡す
+                        writeCsvToUri(uri);
                     }
                 }
             });
     //実際の書き込み処理
-    private void writeCsvToUri(android.net.Uri uri, String csvData) {
+    private void writeCsvToUri(android.net.Uri uri) {
+        //書き込み直前にDBからデータを取得してCSV化
+        List<Contact> contacts = dbHelper.getAllContacts(currentSortOrder);
+        if (contacts.isEmpty()) {
+            Toast.makeText(this, getString(R.string.csv_no_data_to_export), Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String csvData = CsvManager.exportToCsv(contacts);
         //getContentResolver()は他のアプリにアクセスするためのインスタンスを取得する
         //インスタンスがシステム側で取得済みなのでnewは付けなくてよい
         try (OutputStream outputStream = getContentResolver().openOutputStream(uri);
@@ -267,7 +277,7 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, getString(R.string.csv_export_failed, e.getMessage()), Toast.LENGTH_SHORT).show();
         }
     }
-    //
+    //事前チェックを行いインテントを起動
     private void startCsvExport() {
         //DBからリストを取得
         List<Contact> contacts = dbHelper.getAllContacts(currentSortOrder);
@@ -276,8 +286,6 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, getString(R.string.csv_no_data_to_export), Toast.LENGTH_SHORT).show();
             return;
         }
-        //CsvManagerを使ってCSV文字列を生成
-        pendingCsvData = CsvManager.exportToCsv(contacts);
 
         //保存先ファイル名などを指定してIntentを起動
         Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);

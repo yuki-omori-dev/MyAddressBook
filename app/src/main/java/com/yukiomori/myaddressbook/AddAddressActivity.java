@@ -22,29 +22,30 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.yukiomori.myaddressbook.databinding.ActivityAddAddressBinding;
+
 public class AddAddressActivity extends AppCompatActivity {
-    //EditTextのデータを格納するための変数。慣習として変数名の頭にetが付くようだ
-    private EditText etLastName, etFirstName, etLastNameKana, etFirstNameKana;
-    private EditText etZipCode, etAddress, etBuildingRoom, etPhone, etEmail, etMemo;
-    private Button btnSave;
+    //ViewBindingを利用
+    private ActivityAddAddressBinding binding;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         WindowCompat.enableEdgeToEdge(getWindow());
-        setContentView(layout.activity_add_address);
+        //インフレート
+        binding = ActivityAddAddressBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
         //ツールバーのセットアップ
-        androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+        setSupportActionBar(binding.toolbar);
         //ツールバーがステータスバーと重ならないようにする処理
-        ViewCompat.setOnApplyWindowInsetsListener(toolbar, (v, insets) -> {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.toolbar, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(v.getPaddingLeft(), systemBars.top, v.getPaddingRight(), v.getPaddingBottom());
             return insets;
         });
         //キーボードが出現した時に入力欄をキーボードよりも上に持ち上げたように見せた時、座標がズレるのを解決するためxmlに
         // android:id="@+id/layout_container"を追記し、scroll.viewではなく中のlayout_containerに余白を設定する
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.layout_container), (v, insets) -> {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.layoutContainer, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             Insets imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime());
 
@@ -72,9 +73,13 @@ public class AddAddressActivity extends AppCompatActivity {
 
                         //入力欄がキーボードの下に隠れている場合のみ、被っている分だけスクロール
                         if (viewBottomOnScreen > keyboardTopOnScreen) {
-                            int overlap = viewBottomOnScreen - keyboardTopOnScreen + 48; // 余白48px分余裕を持たせる
-                            ScrollView scrollView = findViewById(R.id.scroll_view);
-                            scrollView.smoothScrollBy(0, overlap);
+                            //機種ごとのdensity(倍率)を求め、48pxを基準としたマージンとする
+                            float density=getResources().getDisplayMetrics().density;
+                            int marginPx=(int)(48*density);
+
+                            //端末ごとに余白分を計算し余裕を持たせる
+                            int overlap = viewBottomOnScreen - keyboardTopOnScreen + marginPx;
+                            binding.scrollView.smoothScrollBy(0, overlap);
                         }
                     }
                 }, 250);
@@ -82,24 +87,20 @@ public class AddAddressActivity extends AppCompatActivity {
 
             return insets;
         });
-        //findViewByIdをまとめたメソッド
-        initViews();
         //文字が入力されるとボタンの色が変わる
         setupInputWatchers();
         //戻るボタンイベントの設定。入力途中だったときバック処理に飛ぶ
-        Button btnBack = findViewById(R.id.btn_back);
-        btnBack.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
+        binding.btnBack.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
         //保存ボタンが押された時、データを保存する処理をする
-        btnSave = findViewById(R.id.btn_save);
-        btnSave.setOnClickListener(v-> saveDatabase());
+        binding.btnSave.setOnClickListener(v-> saveDatabase());
         //戻るが押されたときの警告ダイアログ処理
         //onBackPressed()が非推奨なので、onCreate内でOnBackPressedDispatcherを使ってコールバックを登録
         getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
                 if (ValidationUtils.hasUnsavedChanges(
-                        etLastName, etFirstName, etLastNameKana, etFirstNameKana,
-                        etZipCode, etAddress, etBuildingRoom, etPhone, etEmail, etMemo)) {
+                        binding.editLastName, binding.editFirstName, binding.editLastNameKana, binding.editFirstNameKana,
+                        binding.editZipCode, binding.editAddress, binding.editBuildingRoom, binding.editPhone, binding.editEmail, binding.editMemo)) {
                     // 未保存の入力がある場合のみダイアログを表示
                     new androidx.appcompat.app.AlertDialog.Builder(AddAddressActivity.this)
                             .setTitle(R.string.dialog_title_confirm)
@@ -125,20 +126,6 @@ public class AddAddressActivity extends AppCompatActivity {
         });
     }
 
-    private void initViews(){
-        etLastName = findViewById(id.edit_last_name);
-        etFirstName = findViewById(id.edit_first_name);
-        etLastNameKana = findViewById(id.edit_last_name_kana);
-        etFirstNameKana = findViewById(id.edit_first_name_kana);
-        etZipCode = findViewById(id.edit_zip_code);
-        etAddress = findViewById(id.edit_address);
-        etBuildingRoom = findViewById(id.edit_building_room);
-        etPhone = findViewById(id.edit_phone);
-        etEmail = findViewById(id.edit_email);
-        etMemo = findViewById(id.edit_memo);
-
-        btnSave = findViewById(R.id.btn_save);
-    }
     // メニューを表示する機能
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -163,16 +150,16 @@ public class AddAddressActivity extends AppCompatActivity {
 
     //EditViewに入力されたデータをDBに保存し、結果をユーザに報告する
     private void saveDatabase() {
-        String lastName = ValidationUtils.getEditTextString(etLastName);
-        String firstName = ValidationUtils.getEditTextString(etFirstName);
-        String lastNameKana = ValidationUtils.getEditTextString(etLastNameKana);
-        String firstNameKana = ValidationUtils.getEditTextString(etFirstNameKana);
-        String zipCode = ValidationUtils.getEditTextString(etZipCode);
-        String address = ValidationUtils.getEditTextString(etAddress);
-        String buildingRoom = ValidationUtils.getEditTextString(etBuildingRoom);
-        String phone = ValidationUtils.getEditTextString(etPhone);
-        String email = ValidationUtils.getEditTextString(etEmail);
-        String memo = ValidationUtils.getEditTextString(etMemo);
+        String lastName = ValidationUtils.getEditTextString(binding.editLastName);
+        String firstName = ValidationUtils.getEditTextString(binding.editFirstName);
+        String lastNameKana = ValidationUtils.getEditTextString(binding.editLastNameKana);
+        String firstNameKana = ValidationUtils.getEditTextString(binding.editFirstNameKana);
+        String zipCode = ValidationUtils.getEditTextString(binding.editZipCode);
+        String address = ValidationUtils.getEditTextString(binding.editAddress);
+        String buildingRoom = ValidationUtils.getEditTextString(binding.editBuildingRoom);
+        String phone = ValidationUtils.getEditTextString(binding.editPhone);
+        String email = ValidationUtils.getEditTextString(binding.editEmail);
+        String memo = ValidationUtils.getEditTextString(binding.editMemo);
 
         //入力チェック(バリデーション)
         String errorMessage = ValidationUtils.validateContactInput(
@@ -205,8 +192,8 @@ public class AddAddressActivity extends AppCompatActivity {
     // 入力中のデータを一括消去(リセット)するメソッド
     private void clearAllFields() {
         if (!ValidationUtils.hasUnsavedChanges(
-                etLastName, etFirstName, etLastNameKana, etFirstNameKana,
-                etZipCode, etAddress, etBuildingRoom, etPhone, etEmail, etMemo
+                binding.editLastName, binding.editFirstName, binding.editLastNameKana, binding.editFirstNameKana,
+                binding.editZipCode, binding.editAddress, binding.editBuildingRoom, binding.editPhone, binding.editEmail, binding.editMemo
         )) {
             Toast.makeText(this, getString(R.string.toast_no_unsaved_content), Toast.LENGTH_SHORT).show();
             return;
@@ -216,16 +203,16 @@ public class AddAddressActivity extends AppCompatActivity {
                 .setTitle(R.string.dialog_title_confirm)
                 .setMessage(R.string.dialog_msg_clear_confirm)
                 .setPositiveButton(R.string.btn_clear, (dialog, which) -> {
-                    etLastName.setText("");
-                    etFirstName.setText("");
-                    etLastNameKana.setText("");
-                    etFirstNameKana.setText("");
-                    etZipCode.setText("");
-                    etAddress.setText("");
-                    etBuildingRoom.setText("");
-                    etPhone.setText("");
-                    etEmail.setText("");
-                    etMemo.setText("");
+                    binding.editLastName.setText("");
+                    binding.editFirstName.setText("");
+                    binding.editLastNameKana.setText("");
+                    binding.editFirstNameKana.setText("");
+                    binding.editZipCode.setText("");
+                    binding.editAddress.setText("");
+                    binding.editBuildingRoom.setText("");
+                    binding.editPhone.setText("");
+                    binding.editEmail.setText("");
+                    binding.editMemo.setText("");
                     Toast.makeText(this, getString(R.string.toast_fields_cleared), Toast.LENGTH_SHORT).show();
                 })
                 .setNegativeButton(R.string.dialog_btn_cancel, null)
@@ -235,16 +222,16 @@ public class AddAddressActivity extends AppCompatActivity {
     //入力の有無に応じて保存ボタンの色を変更するメソッド
     private void updateSaveButtonState() {
         boolean hasInput = ValidationUtils.hasUnsavedChanges(
-                etLastName, etFirstName, etLastNameKana, etFirstNameKana,
-                etZipCode, etAddress, etBuildingRoom, etPhone, etEmail, etMemo
+                binding.editLastName, binding.editFirstName, binding.editLastNameKana, binding.editFirstNameKana,
+                binding.editZipCode, binding.editAddress, binding.editBuildingRoom, binding.editPhone, binding.editEmail, binding.editMemo
         );
 
         if (hasInput) {
             // 何らかの入力がある場合:明るい緑色
-            btnSave.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#4CAF50")));
+            binding.btnSave.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#4CAF50")));
         } else {
             // 全て未入力の場合:元の紫色
-            btnSave.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#FF6200EE")));
+            binding.btnSave.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#FF6200EE")));
         }
     }
 
@@ -264,16 +251,16 @@ public class AddAddressActivity extends AppCompatActivity {
             public void afterTextChanged(Editable s) {}
         };
 
-        etLastName.addTextChangedListener(watcher);
-        etFirstName.addTextChangedListener(watcher);
-        etLastNameKana.addTextChangedListener(watcher);
-        etFirstNameKana.addTextChangedListener(watcher);
-        etZipCode.addTextChangedListener(watcher);
-        etAddress.addTextChangedListener(watcher);
-        etBuildingRoom.addTextChangedListener(watcher);
-        etPhone.addTextChangedListener(watcher);
-        etEmail.addTextChangedListener(watcher);
-        etMemo.addTextChangedListener(watcher);
+        binding.editLastName.addTextChangedListener(watcher);
+        binding.editFirstName.addTextChangedListener(watcher);
+        binding.editLastNameKana.addTextChangedListener(watcher);
+        binding.editFirstNameKana.addTextChangedListener(watcher);
+        binding.editZipCode.addTextChangedListener(watcher);
+        binding.editAddress.addTextChangedListener(watcher);
+        binding.editBuildingRoom.addTextChangedListener(watcher);
+        binding.editPhone.addTextChangedListener(watcher);
+        binding.editEmail.addTextChangedListener(watcher);
+        binding.editMemo.addTextChangedListener(watcher);
     }
 
 }

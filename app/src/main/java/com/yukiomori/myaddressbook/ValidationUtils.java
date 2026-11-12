@@ -3,7 +3,11 @@ package com.yukiomori.myaddressbook;
 import android.content.Context;
 import android.widget.EditText;
 
+import java.util.regex.Pattern;
+
 public class ValidationUtils {
+    private static final Pattern KANA_CHECK_PATTERN=Pattern.compile("^[ぁ-んー]+$");
+
     //ここから個別の項目についてのバリデーション
     //姓か名のどちらかが入力されているか
     public static boolean hasName(String lastName, String firstName) {
@@ -24,7 +28,7 @@ public class ValidationUtils {
         if (text == null || text.isEmpty()) {
             return true;
         }
-        return text.matches("^[ぁ-んー]+$");
+        return KANA_CHECK_PATTERN.matcher(text).matches();
     }
 
     //郵便番号桁数チェック（ハイフンを除いて数字7桁か）

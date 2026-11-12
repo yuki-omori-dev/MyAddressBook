@@ -2,8 +2,11 @@ package com.yukiomori.myaddressbook;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class CsvManager {
+    //正規表現文字列だけでコンパイル
+    private static final Pattern CSV_SPLIT_PATTERN = Pattern.compile(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
 
     // ContactのリストからCSV文字列を生成する
     public static String exportToCsv(List<Contact> contacts) {
@@ -30,7 +33,7 @@ public class CsvManager {
     private static String escapeCsv(String value) {
         if (value == null) return "";
         //カンマ、ダブルクォーテーション、改行、が含まれる場合はエスケープし全体を囲む
-        if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
+        if (value.contains(",") || value.contains("\"") || value.contains("\n") || value.contains("\r")) {
             value = value.replace("\"", "\"\"");
             return "\"" + value + "\"";
         }
@@ -44,23 +47,24 @@ public class CsvManager {
             return contacts;
         }
 
-        String[] lines = csvContent.split("\n");
+        List<String> csvList = splitCsvRecords(csvContent);
         int startIndex=0;
         //1行目がヘッダーかチェック
-        if(lines.length>0){
-            String firstLine=lines[0].trim();
+        if(!csvList.isEmpty()){
+            //先頭のレコードを取り出す
+            String firstLine=csvList.get(0).trim();
             //大文字・小文字を区別せずUUIDまたは姓が含まれていればヘッダー行と判断する
             if(firstLine.toUpperCase().contains("UUID")||firstLine.contains("姓")){
                 startIndex=1;   //1行目をスキップ
             }
         }
 
-        for (int i = startIndex; i < lines.length; i++) {
-            String line = lines[i].trim();
+        for (int i = startIndex; i < csvList.size(); i++) {
+            String line = csvList.get(i).trim();
             if (line.isEmpty()) continue;
 
             //メモなどにカンマが含まれている可能性があるのでCSVパーサーを通すのが理想
-            String[] tokens = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
+            String[] tokens = CSV_SPLIT_PATTERN.split(line, -1);
 
             if (tokens.length >= 11) {
                 String uuid = unescapeCsv(tokens[0]);
@@ -89,10 +93,40 @@ public class CsvManager {
         if (value == null) return "";
         value = value.trim();
         //ダブルクォーテーションで囲まれている場合は外す
-        if (value.startsWith("\"") && value.endsWith("\"")) {
+        //文字数が単一の"だったときのためvalue.length() >= 2 && を追記
+        if (value.length() >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
             value = value.substring(1, value.length() - 1);
             value = value.replace("\"\"", "\"");
         }
         return value;
+    }
+
+    //改行が含まれていても対応するパーサー
+    //ダブルクォーテーションの中にいる間は改行を行分割しない、というロジック
+    private static List<String> splitCsvRecords(String csvContent) {
+        List<String> records = new ArrayList<>();
+        StringBuilder currentRecord = new StringBuilder();
+        boolean inQuotes = false; // ダブルクォートの中にいるかのフラグ
+
+        for (int i = 0; i < csvContent.length(); i++) {
+            char c = csvContent.charAt(i);
+
+            if (c == '"') {
+                inQuotes = !inQuotes; // クォートの開閉を反転
+                currentRecord.append(c);
+            } else if (c == '\n' && !inQuotes) {
+                // クォートの外側にある改行のみ「レコードの終わり」とみなす
+                records.add(currentRecord.toString());
+                currentRecord.setLength(0); // リセット
+            } else if (c == '\r' && !inQuotes) {
+                // Windowsの改行コード(\r\n)対策: \r は無視
+            } else {
+                currentRecord.append(c);
+            }
+        }
+        if (currentRecord.length() > 0) {
+            records.add(currentRecord.toString());
+        }
+        return records;
     }
 }

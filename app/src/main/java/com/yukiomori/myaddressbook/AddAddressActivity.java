@@ -1,6 +1,5 @@
 package com.yukiomori.myaddressbook;
 
-import static com.yukiomori.myaddressbook.R.*;
 
 import android.content.res.ColorStateList;
 import android.graphics.Color;

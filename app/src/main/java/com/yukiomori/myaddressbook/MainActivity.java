@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -293,7 +292,11 @@ public class MainActivity extends AppCompatActivity {
         intent.setType("text/csv");
         intent.putExtra(Intent.EXTRA_TITLE, "address_book_backup.csv");
 
-        exportCsvLauncher.launch(intent);
+        try {
+            exportCsvLauncher.launch(intent);
+        } catch (android.content.ActivityNotFoundException e) {
+            Toast.makeText(this, "ファイル管理アプリが見つかりませんでした", Toast.LENGTH_SHORT).show();
+        }
     }
     //ここまでがCSVのエクスポートに関する処理
     //ここからCSVのインポートに関する処理
@@ -342,7 +345,12 @@ public class MainActivity extends AppCompatActivity {
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         //text/csvでは受け付けなかったので変更
         intent.setType("*/*");
-        importCsvLauncher.launch(intent);
+
+        try {
+            importCsvLauncher.launch(intent);
+        } catch (android.content.ActivityNotFoundException e) {
+            Toast.makeText(this, "ファイル選択アプリが見つかりませんでした", Toast.LENGTH_SHORT).show();
+        }
     }
     //ここまでCSVインポート処理
 

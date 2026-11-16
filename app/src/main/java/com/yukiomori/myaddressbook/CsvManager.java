@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 
 public class CsvManager {
     //正規表現文字列だけでコンパイル
-    private static final Pattern CSV_SPLIT_PATTERN = Pattern.compile(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
+    private static final Pattern CSV_SPLIT_PATTERN = Pattern.compile(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
 
     // ContactのリストからCSV文字列を生成する
     public static String exportToCsv(List<Contact> contacts) {

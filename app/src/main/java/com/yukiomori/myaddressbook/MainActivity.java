@@ -172,12 +172,12 @@ public class MainActivity extends AppCompatActivity {
 
         if (id == R.id.action_sort_asc) {
             //昇順
-            currentSortOrder = "last_name_kana ASC, first_name_kana ASC";
+            currentSortOrder = "(last_name_kana || first_name_kana) ASC";
             loadContactList();
             return true;
         } else if (id == R.id.action_sort_desc) {
             // 降順
-            currentSortOrder = "last_name_kana DESC, first_name_kana DESC";
+            currentSortOrder = "(last_name_kana || first_name_kana) DESC";
             loadContactList();
             return true;
         } else if (id == R.id.action_sort_default) {

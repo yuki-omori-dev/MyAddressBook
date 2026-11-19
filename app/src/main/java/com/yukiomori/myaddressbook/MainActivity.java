@@ -37,7 +37,6 @@ public class MainActivity extends AppCompatActivity {
     //SQL命令用の保持用変数
     private String currentSortOrder = null;
     //検索窓に入力するたびにオブジェクトを作るのが効率が悪いのでAdapterもメンバを作る
-    private ContactAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -206,7 +205,7 @@ public class MainActivity extends AppCompatActivity {
         //登録データが0件ならメッセージ
         updateListVisibility(contactList,false);
         //新しいアダプターを作成してセット
-        adapter = new ContactAdapter(this, contactList);
+        ContactAdapter adapter = new ContactAdapter(this, contactList);
         binding.listView.setAdapter(adapter);
     }
 

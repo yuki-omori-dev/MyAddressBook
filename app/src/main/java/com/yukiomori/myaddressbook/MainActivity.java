@@ -2,6 +2,7 @@ package com.yukiomori.myaddressbook;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -23,6 +24,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -216,7 +218,7 @@ public class MainActivity extends AppCompatActivity {
         for(int i=0;i<sb.length();i++){
             char c=sb.charAt(i);
             //ひらがなの範囲(ぁ:0x3041_ん:0x3093)
-            if(c>='\u3041'&&c<='\u3093'){
+            if(c>='ぁ'&&c<='ん'){
                 sb.setCharAt(i,(char)(c+0x60)); //カタカナに変換
             }
         }
@@ -264,11 +266,11 @@ public class MainActivity extends AppCompatActivity {
         //getContentResolver()は他のアプリにアクセスするためのインスタンスを取得する
         //インスタンスがシステム側で取得済みなのでnewは付けなくてよい
         try (OutputStream outputStream = getContentResolver().openOutputStream(uri);
-             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, "UTF-8"))) {
+             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, StandardCharsets.UTF_8))) {
             writer.write(csvData);
             Toast.makeText(this, getString(R.string.csv_export_success), Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("MainActivity","CSVファイル処理でエラーが発生しました",e);
             Toast.makeText(this, getString(R.string.csv_export_failed, e.getMessage()), Toast.LENGTH_SHORT).show();
         }
     }

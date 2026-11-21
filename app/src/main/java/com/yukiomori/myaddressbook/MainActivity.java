@@ -311,7 +311,7 @@ public class MainActivity extends AppCompatActivity {
     //ファイルを読み込んでDBに保存する処理
     private void readCsvFromUri(android.net.Uri uri) {
         try (InputStream inputStream = getContentResolver().openInputStream(uri);
-             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"))) {
+             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream,StandardCharsets.UTF_8))) {
 
             StringBuilder sb = new StringBuilder();
             String line;
@@ -333,7 +333,7 @@ public class MainActivity extends AppCompatActivity {
             loadContactList(); // リスト再描画
 
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("MainActivity", "CSVファイルのインポートでエラーが発生しました", e);
             Toast.makeText(this, getString(R.string.csv_import_failed, e.getMessage()), Toast.LENGTH_SHORT).show();
         }
     }

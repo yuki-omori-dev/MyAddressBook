@@ -1,5 +1,3 @@
-<img width="1080" height="2400" alt="Screen_recording_20261123_140420" src="https://github.com/user-attachments/assets/26931832-d4dd-456d-9c62-b5cf3663c25c" />
-<img width="1080" height="2400" alt="Screen_recording_20261123_135843" src="https://github.com/user-attachments/assets/b05002e0-c599-4825-9223-479310a37b1f" />
 # アプリの概要
 
 連絡先を管理できるシンプルなAndroidの住所録アプリです。登録した情報からワンタップで外部アプリを起動できるため、日々の連絡や移動がスムーズに行えます。
